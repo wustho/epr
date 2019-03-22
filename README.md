@@ -1,4 +1,4 @@
-# epr
+# `$ epr.py`
 
 ![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
