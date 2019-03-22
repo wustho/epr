@@ -4,6 +4,7 @@ Usage:
     epr.py [EPUBFILE]
 
 Key binding:
+    Help            : h, ?
     Quit            : q
     Scroll down     : ARROW DOWN
     Scroll up       : ARROW UP

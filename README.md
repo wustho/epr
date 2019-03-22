@@ -10,7 +10,7 @@ CLI Epub reader written in Python 3.7 with features:
 
 Inspired by: rupa/epub TODO
 
-## LIMITATIONS
+## Limitations
 
 - doesn't support images
 - doesn't support epub3
@@ -19,24 +19,29 @@ Inspired by: rupa/epub TODO
 - saved state (reading position & width, but not reading chapter) will reset 
   if current terminal size is incompatible with latest reading state
 
-## DEPENDANCIES
+## Dependancies
 
 - `html2text`
 - `curses`
 
-## USAGE
+## Usages
 
+To read an EPUBFILE:
+
+
+```shell
+$ epr.py EPUBFILE
 ```
-Usage:
-    to read an EPUBFILE:
-        epr.py EPUBFILE
-        python3 epr.py EPUBFILE
 
-    to read last read epub:
-        epr.py
+To read last read epub:
 
+```shell
+$ epr.py
+```
 
-Key binding:
+Key bindings:
+```
+    Help            : h, ?
     Quit            : q
     Scroll down     : ARROW DOWN
     Scroll up       : ARROW UP
