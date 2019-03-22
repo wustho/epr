@@ -38,9 +38,30 @@ from urllib.parse import unquote
 locale.setlocale(locale.LC_ALL, "")
 # code = locale.getpreferredencoding()
 
-configfile = os.path.join(os.getenv("HOME"), ".epr")
-config = configparser.ConfigParser(strict=False)
-config.read(configfile)
+def config_path():
+    home = os.getenv("HOME")
+
+    # check for xdg support
+    xdg_vars = { k:v for k,v in os.environ.items() if k.startswith('XDG_') }
+    if not xdg_vars:
+        return os.path.join(os.getenv("HOME"), ".epr")
+
+    xdg_home = xdg_vars.get('XDG_CONFIG_HOME', os.path.join(home, ".config"))
+    return xdg_home + "/epr/config"
+
+def load_config():
+    c = configparser.ConfigParser(strict=False)
+    c.read(config_path())
+    return c
+
+def save_config(config):
+    fp = config_path()
+    if not os.path.exists(os.path.dirname(fp)):
+        os.mkdir(os.path.dirname(fp))
+    with open(fp, "w") as f:
+        config.write(f)
+
+config = load_config()
 
 # key bindings
 SCROLL_DOWN = curses.KEY_DOWN
@@ -281,8 +302,7 @@ def reader(stdscr, ebook, index, width, y=0):
             config[ebook.path]["index"] = str(index)
             config[ebook.path]["width"] = str(width)
             config[ebook.path]["pos"] = str(y)
-            with open(configfile, "w") as f:
-                config.write(f)
+            save_config(config)
             exit()
         if k == SCROLL_UP:
             if y > 0:
