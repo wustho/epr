@@ -12,6 +12,7 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Limitations
 
+- saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name. (Probably fix this next weekend)
 - doesn't support images
 - doesn't support epub3
 - minimum width: 22 cols
