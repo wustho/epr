@@ -7,14 +7,16 @@ CLI Epub reader written in Python 3.7 with features:
 - remember last read file (just run `epr.py` without any argument)
 - remember last reading state for each file (per file saved state written to `$HOME/.epr`)
 - adjustable text area width
+- support EPUB3 (tested on some, still no media supports though)
+- added secondary vim-like key bindings
 
 Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Limitations
 
-- saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name. (Probably fix this next weekend)
+- [Fixed] ~~saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name. (Probably fix this next weekend)~~
 - doesn't support images
-- doesn't support epub3
+- ~~doesn't support epub3~~
 - minimum width: 22 cols
 - resizing terminal will reset to beginning of current chapter
 - saved state (reading position & width, but not reading chapter) will reset 
@@ -42,16 +44,16 @@ $ epr.py
 
 Key bindings:
 ```
-    Help            : h, ?
+    Help            : ?
     Quit            : q
-    Scroll down     : ARROW DOWN
-    Scroll up       : ARROW UP
-    Page down       : PGUP
-    Page up         : PGDN
-    Next chapter    : ARROW RIGHT
-    Prev chapter    : ARROW LEFT
-    Beginning of ch : HOME
-    End of ch       : END
+    Scroll down     : ARROW DOWN    j
+    Scroll up       : ARROW UP      k
+    Page down       : PGDN          J
+    Page up         : PGUP          K
+    Next chapter    : ARROW RIGHT   l
+    Prev chapter    : ARROW LEFT    h
+    Beginning of ch : HOME          g
+    End of ch       : END           G
     Shrink          : -
     Enlarge         : =
     TOC             : t

@@ -4,16 +4,16 @@ Usage:
     epr.py [EPUBFILE]
 
 Key binding:
-    Help            : h, ?
+    Help            : ?
     Quit            : q
-    Scroll down     : ARROW DOWN
-    Scroll up       : ARROW UP
-    Page down       : PGUP
-    Page up         : PGDN
-    Next chapter    : ARROW RIGHT
-    Prev chapter    : ARROW LEFT
-    Beginning of ch : HOME
-    End of ch       : END
+    Scroll down     : ARROW DOWN    j
+    Scroll up       : ARROW UP      k
+    Page down       : PGDN          J
+    Page up         : PGUP          K
+    Next chapter    : ARROW RIGHT   l
+    Prev chapter    : ARROW LEFT    h
+    Beginning of ch : HOME          g
+    End of ch       : END           G
     Shrink          : -
     Enlarge         : =
     TOC             : t
@@ -31,33 +31,36 @@ import sys
 import re
 import os
 import html2text
-import configparser
+import json
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 
 locale.setlocale(locale.LC_ALL, "")
 # code = locale.getpreferredencoding()
 
-configfile = os.path.join(os.getenv("HOME"), ".epr")
-config = configparser.ConfigParser(strict=False)
-config.read(configfile)
+statefile = os.path.join(os.getenv("HOME"), ".epr")
+if os.path.exists(statefile):
+    with open(statefile, "r") as f:
+        state = json.load(f)
+else:
+    state = {}
 
 # key bindings
-SCROLL_DOWN = curses.KEY_DOWN
-SCROLL_UP = curses.KEY_UP
-PAGE_DOWN = curses.KEY_NPAGE
-PAGE_UP = curses.KEY_PPAGE
-CH_NEXT = curses.KEY_RIGHT
-CH_PREV = curses.KEY_LEFT
-CH_HOME = curses.KEY_HOME
-CH_END = curses.KEY_END
+SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
+SCROLL_UP = {curses.KEY_UP, ord("k")}
+PAGE_DOWN = {curses.KEY_NPAGE, ord("J")}
+PAGE_UP = {curses.KEY_PPAGE, ord("K")}
+CH_NEXT = {curses.KEY_RIGHT, ord("l")}
+CH_PREV = {curses.KEY_LEFT, ord("h")}
+CH_HOME = {curses.KEY_HOME, ord("g")}
+CH_END = {curses.KEY_END, ord("G")}
 SHRINK = ord("-")
 WIDEN = ord("=")
 META = ord("m")
 TOC = ord("t")
 FOLLOW = 10
-QUIT = [ord("q"), 3]
-HELP = [ord("?"), ord("h")]
+QUIT = {ord("q"), 3}
+HELP = {ord("?")}
 
 parser = html2text.HTML2Text()
 parser.ignore_emphasis = True
@@ -68,7 +71,8 @@ parser.skip_internal_links = True
 NS = {"DAISY" : "http://www.daisy.org/z3986/2005/ncx/",
       "OPF" : "http://www.idpf.org/2007/opf",
       "CONT" : "urn:oasis:names:tc:opendocument:xmlns:container",
-      "XHTML" : "http://www.w3.org/1999/xhtml"}
+      "XHTML" : "http://www.w3.org/1999/xhtml",
+      "EPUB" : "http://www.idpf.org/2007/ops"}
 
 class Epub:
     def __init__(self, fileepub):
@@ -78,7 +82,12 @@ class Epub:
         self.rootfile = cont.find("CONT:rootfiles/CONT:rootfile", NS).attrib["full-path"]
         self.rootdir = os.path.dirname(self.rootfile) + "/" if os.path.dirname(self.rootfile) != "" else ""
         cont = ET.parse(self.file.open(self.rootfile))
-        self.toc = self.rootdir + cont.find("OPF:manifest/*[@id='ncx']", NS).get("href")
+        # EPUB3
+        self.version = cont.getroot().get("version")
+        if self.version == "2.0":
+            self.toc = self.rootdir + cont.find("OPF:manifest/*[@id='ncx']", NS).get("href")
+        elif self.version == "3.0":
+            self.toc = self.rootdir + cont.find("OPF:manifest/*[@properties='nav']", NS).get("href")
 
     def get_meta(self):
         meta = []
@@ -93,13 +102,15 @@ class Epub:
         cont = ET.parse(self.file.open(self.rootfile)).getroot()
         manifest = []
         for i in cont.findall("OPF:manifest/*", NS):
-            if i.get("id") != "ncx":
+            # EPUB3
+            if i.get("id") != "ncx" and i.get("properties") != "nav":
                 manifest.append([
                     i.get("id"),
                     i.get("href")
                 ])
             else:
                 toc = self.rootdir + unquote(i.get("href"))
+
         spine = []
         for i in cont.findall("OPF:spine/*", NS):
             spine.append(i.get("idref"))
@@ -113,13 +124,23 @@ class Epub:
 
         namedcontents = []
         toc = ET.parse(self.file.open(toc)).getroot()
-        navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
+        # EPUB3
+        if self.version == "2.0":
+            navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
+        elif self.version == "3.0":
+            navPoints = toc.findall("XHTML:body/XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
         for i in contents:
             name = "unknown"
             for j in navPoints:
-                if i == unquote(j.find("DAISY:content", NS).get("src")):
-                    name = j.find("DAISY:navLabel/DAISY:text", NS).text
-                    break
+                # EPUB3
+                if self.version == "2.0":
+                    if i == unquote(j.find("DAISY:content", NS).get("src")):
+                        name = j.find("DAISY:navLabel/DAISY:text", NS).text
+                        break
+                elif self.version == "3.0":
+                    if i == unquote(j.get("href")):
+                        name = "".join(list(j.itertext()))
+
             namedcontents.append([
                 name,
                 self.rootdir + i
@@ -165,10 +186,10 @@ def toc(stdscr, ebook, index, width):
     top = pad(src, index)
 
     while key_toc != TOC and key_toc not in QUIT:
-        if key_toc == SCROLL_UP and index > 0:
+        if key_toc in SCROLL_UP and index > 0:
             index -= 1
             top = pad(src, index, top)
-        if key_toc == SCROLL_DOWN and index + 1 < len(src):
+        if key_toc in SCROLL_DOWN and index + 1 < len(src):
             index += 1
             top = pad(src, index, top)
         if key_toc == FOLLOW:
@@ -205,9 +226,9 @@ def meta(stdscr, ebook):
     pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
 
     while key_meta != META and key_meta not in QUIT:
-        if key_meta == SCROLL_UP and y > 0:
+        if key_meta in SCROLL_UP and y > 0:
             y -= 1
-        if key_meta == SCROLL_DOWN and y < len(src_lines) - hi + 4:
+        if key_meta in SCROLL_DOWN and y < len(src_lines) - hi + 4:
             y += 1
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
         key_meta = meta.getch()
@@ -264,7 +285,7 @@ def reader(stdscr, ebook, index, width, y=0):
     parser.body_width = width
     src = parser.handle(content.decode("utf-8"))
     src_lines = src.split("\n")
-    
+
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
     for i in range(len(src_lines)):
@@ -275,44 +296,44 @@ def reader(stdscr, ebook, index, width, y=0):
     while True:
         # if k == QUIT or k == 3:
         if k in QUIT:
-            for i in config.sections():
-                config[i]["lastread"] = str(0)
-            config[ebook.path]["lastread"] = str(1)
-            config[ebook.path]["index"] = str(index)
-            config[ebook.path]["width"] = str(width)
-            config[ebook.path]["pos"] = str(y)
-            with open(configfile, "w") as f:
-                config.write(f)
+            for i in state:
+                state[i]["lastread"] = str(0)
+            state[ebook.path]["lastread"] = str(1)
+            state[ebook.path]["index"] = str(index)
+            state[ebook.path]["width"] = str(width)
+            state[ebook.path]["pos"] = str(y)
+            with open(statefile, "w") as f:
+                json.dump(state, f, indent=4)
             exit()
-        if k == SCROLL_UP:
+        if k in SCROLL_UP:
             if y > 0:
                 y -= 1
             # if y == 0 and index > 0:
             #     reader(stdscr, ebook, index-1, width)
-        if k == PAGE_UP:
+        if k in PAGE_UP:
             if y >= rows - 2:
                 y -= rows - 2
             else:
                 y = 0
-        if k == SCROLL_DOWN:
+        if k in SCROLL_DOWN:
             if y < len(src_lines) - rows:
                 y += 1
             # if y + rows >= len(src_lines):
             #     reader(stdscr, ebook, index+1, width)
-        if k == PAGE_DOWN:
+        if k in PAGE_DOWN:
             if y + rows - 2 <= len(src_lines) - rows:
                 y += rows - 2
             else:
                 y = len(src_lines) - rows
                 if y < 0:
                     y = 0
-        if k == CH_NEXT and index < len(ebook.get_contents()) - 1:
+        if k in CH_NEXT and index < len(ebook.get_contents()) - 1:
             reader(stdscr, ebook, index+1, width)
-        if k == CH_PREV and index > 0:
+        if k in CH_PREV and index > 0:
             reader(stdscr, ebook, index-1, width)
-        if k == CH_HOME:
+        if k in CH_HOME:
             y = 0
-        if k == CH_END:
+        if k in CH_END:
             y = len(src_lines) - rows
         if k == TOC:
             toc(stdscr, ebook, index, width)
@@ -347,12 +368,12 @@ def main(stdscr, file):
     rows, cols = stdscr.getmaxyx()
     epub = Epub(file)
 
-    if epub.path in config:
-        idx = int(config[epub.path]["index"])
-        width = int(config[epub.path]["width"])
-        y = int(config[epub.path]["pos"])
+    if epub.path in state:
+        idx = int(state[epub.path]["index"])
+        width = int(state[epub.path]["width"])
+        y = int(state[epub.path]["pos"])
     else:
-        config[epub.path] = {}
+        state[epub.path] = {}
         idx = 1
         y = 0
         width = 80
@@ -365,10 +386,10 @@ def main(stdscr, file):
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         file = False
-        for i in config.sections():
+        for i in state:
             if not os.path.exists(i):
-                config.remove_section(i)
-            elif config[i]["lastread"] == str(1):
+                del state[i]
+            elif state[i]["lastread"] == str(1):
                 file = i
         if not file:
             print("ERROR: Found no last read file.")
