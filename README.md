@@ -1,6 +1,6 @@
 # epr
 
-[Screenshot]()
+![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
 CLI Epub reader written in Python 3.7 with features:
 
@@ -8,7 +8,7 @@ CLI Epub reader written in Python 3.7 with features:
 - remember last reading state for each file (per file saved state written to `$HOME/.epr`)
 - adjustable text area width
 
-Inspired by: rupa/epub TODO
+Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Limitations
 
