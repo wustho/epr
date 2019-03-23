@@ -17,9 +17,9 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - [x] ~~saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name.~~
 - [ ] doesn't support images
 - [x] ~~doesn't support epub3~~
-- [ ] minimum width: 22 cols
-- [ ] resizing terminal will reset to beginning of current chapter
-- [ ] saved state (reading position & width, but not reading chapter) will reset 
+- minimum width: 22 cols
+- resizing terminal will reset to beginning of current chapter
+- saved state (reading position & width, but not reading chapter) will reset 
   if current terminal size is incompatible with latest reading state
 
 ## Dependencies
