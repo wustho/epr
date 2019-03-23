@@ -26,8 +26,10 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Dependencies
 
-- `html2text`
+- ~~`html2text`~~
 - `curses`
+
+Started from `v1.2.0`, `epr.py` no longer requires `html2text` library. But if you have trouble with it, you probably need to go use older version provided in release page.
 
 ## Usage
 
@@ -50,7 +52,7 @@ Key bindings:
     Quit            : q
     Scroll down     : ARROW DOWN    j
     Scroll up       : ARROW UP      k
-    Page down       : PGDN          J
+    Page down       : PGDN          J   SPC
     Page up         : PGUP          K
     Next chapter    : ARROW RIGHT   l
     Prev chapter    : ARROW LEFT    h
