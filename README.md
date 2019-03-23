@@ -14,20 +14,20 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Limitations
 
-- [Fixed] ~~saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name. (Probably fix this next weekend)~~
-- doesn't support images
-- ~~doesn't support epub3~~
-- minimum width: 22 cols
-- resizing terminal will reset to beginning of current chapter
-- saved state (reading position & width, but not reading chapter) will reset 
+- [x] ~~saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name.~~
+- [ ] doesn't support images
+- [x] ~~doesn't support epub3~~
+- [ ] minimum width: 22 cols
+- [ ] resizing terminal will reset to beginning of current chapter
+- [ ] saved state (reading position & width, but not reading chapter) will reset 
   if current terminal size is incompatible with latest reading state
 
-## Dependancies
+## Dependencies
 
 - `html2text`
 - `curses`
 
-## Usages
+## Usage
 
 To read an EPUBFILE:
 
@@ -59,16 +59,3 @@ Key bindings:
     TOC             : t
     Metadata        : m
 ```
-
-# License
-
-MIT License
-
-Copyright (c) 2019 Benawi Adha
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
