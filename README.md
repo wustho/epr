@@ -10,6 +10,8 @@ CLI Epub reader written in Python 3.7 with features:
 - support EPUB3 (tested on some, still no media supports though)
 - added secondary vim-like key bindings
 
+NOTE for developers: Please no Pull Requests until probably **July 2019**, I already have something in mind for this proj that I'd like to work on it first and I feel bad closing PR without merging it. But I always appreciate the supports, from the deepest of my heart.
+
 Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Limitations
