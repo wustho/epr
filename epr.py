@@ -43,7 +43,11 @@ from subprocess import run
 locale.setlocale(locale.LC_ALL, "")
 # code = locale.getpreferredencoding()
 
-statefile = os.path.join(os.getenv("HOME"), ".epr")
+if os.getenv("HOME") != None:
+    statefile = os.path.join(os.getenv("HOME"), ".epr")
+else:
+    statefile = os.devnull
+
 if os.path.exists(statefile):
     with open(statefile, "r") as f:
         state = json.load(f)
@@ -73,7 +77,7 @@ NS = {"DAISY" : "http://www.daisy.org/z3986/2005/ncx/",
       "XHTML" : "http://www.w3.org/1999/xhtml",
       "EPUB" : "http://www.idpf.org/2007/ops"}
 
-RIGHTPADDING = 2
+RIGHTPADDING = 0 # default = 2
 LINEPRSRV = 0 # default = 2
 
 VWR_LIST = [
@@ -90,6 +94,7 @@ else:
     for i in VWR_LIST:
         if shutil.which(i) != None:
             VWR = i
+            break
 
 class Epub:
     def __init__(self, fileepub):
@@ -368,7 +373,7 @@ def reader(stdscr, ebook, index, width, y=0):
             state[ebook.path]["pos"] = str(y)
             with open(statefile, "w") as f:
                 json.dump(state, f, indent=4)
-            exit()
+            sys.exit()
         if k in SCROLL_UP:
             if y > 0:
                 y -= 1
@@ -498,8 +503,8 @@ if __name__ == "__main__":
             del state[i]
 
         if not file:
-            print("ERROR: Found no last read file.")
             print(__doc__)
+            sys.exit("ERROR: Found no last read file.")
         else:
             curses.wrapper(main, file)
     elif len(sys.argv) == 2 and sys.argv[1] not in ("-h", "--help"):
