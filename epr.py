@@ -14,6 +14,7 @@ Key binding:
     Prev chapter    : ARROW LEFT    h
     Beginning of ch : HOME          g
     End of ch       : END           G
+    Open image      : o
     Shrink          : -
     Enlarge         : =
     TOC             : t
@@ -32,9 +33,12 @@ import re
 import os
 import textwrap
 import json
+import tempfile
+import shutil
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from html.entities import html5
+from subprocess import run
 
 locale.setlocale(locale.LC_ALL, "")
 # code = locale.getpreferredencoding()
@@ -59,7 +63,7 @@ SHRINK = ord("-")
 WIDEN = ord("=")
 META = ord("m")
 TOC = ord("t")
-FOLLOW = 10
+FOLLOW = {10}
 QUIT = {ord("q"), 3}
 HELP = {ord("?")}
 
@@ -71,6 +75,21 @@ NS = {"DAISY" : "http://www.daisy.org/z3986/2005/ncx/",
 
 RIGHTPADDING = 2
 LINEPRSRV = 0 # default = 2
+
+VWR_LIST = [
+    "feh",
+    "gnome-open",
+    "gvfs-open",
+    "xdg-open",
+    "kde-open"
+]
+VWR = None
+if sys.platform == "win32":
+    VWR = "start"
+else:
+    for i in VWR_LIST:
+        if shutil.which(i) != None:
+            VWR = i
 
 class Epub:
     def __init__(self, fileepub):
@@ -192,7 +211,7 @@ def toc(stdscr, ebook, index, width):
         if key_toc in SCROLL_DOWN and index + 1 < len(src):
             index += 1
             top = pad(src, index, top)
-        if key_toc == FOLLOW:
+        if key_toc in FOLLOW:
             reader(stdscr, ebook, index, width, 0)
         key_toc = toc.getch()
 
@@ -275,6 +294,17 @@ def help(stdscr):
     help.refresh()
     return
 
+def open_media(scr, epub, src):
+    sfx = os.path.splitext(src)[1]
+    fd, path = tempfile.mkstemp(suffix=sfx)
+    try:
+        with os.fdopen(fd, "wb") as tmp:
+            tmp.write(epub.file.read(src))
+        run([VWR, path], shell=True)
+        k = scr.getch()
+    finally:
+        os.remove(path)
+
 def to_text(src, width):
     while True:
         try:
@@ -286,7 +316,7 @@ def to_text(src, width):
             src = re.sub("&" + ent, html5[ent], src.decode("utf-8")).encode("utf-8")
 
     body = root.find("XHTML:body", NS)
-    text = []
+    text, imgs = [], []
     # for i in body.findall("*", NS):
     # for i in body.findall(".//XHTML:p", NS):
     for i in body.findall(".//*"):
@@ -300,8 +330,12 @@ def to_text(src, width):
             par = re.sub("\t", "", par)
             par = textwrap.fill(par, width)
             text += par.splitlines() + [""]
+        elif re.match("{"+NS["XHTML"]+"}img", i.tag) != None:
+            text.append("[IMG:{}]".format(len(imgs)))
+            text.append("")
+            imgs.append(unquote(i.attrib["src"]))
 
-    return text + [""]
+    return text + [""], imgs
 
 def reader(stdscr, ebook, index, width, y=0):
     k = 0
@@ -312,12 +346,15 @@ def reader(stdscr, ebook, index, width, y=0):
 
     content = ebook.file.open(ebook.get_contents()[index][1]).read()
 
-    src_lines = to_text(content, width)
+    src_lines, imgs = to_text(content, width)
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
     for i in range(len(src_lines)):
-        pad.addstr(i, 0, src_lines[i])
+        if re.search("\[IMG:[0-9]+\]", src_lines[i]):
+            pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
+        else:
+            pad.addstr(i, 0, src_lines[i])
     pad.addstr(i, width//2 - 10 - RIGHTPADDING, "-- End of Chapter --", curses.A_REVERSE)
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
@@ -378,6 +415,42 @@ def reader(stdscr, ebook, index, width, y=0):
             width -= 2
             reader(stdscr, ebook, index, width)
             return
+        if k == ord("o") and VWR != None:
+            gambar, idx = [], []
+            for n, i in enumerate(src_lines[y:y+rows]):
+                img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
+                if img != None:
+                    gambar.append(img.group())
+                    idx.append(n)
+
+            impath = ""
+            if len(gambar) == 1:
+                impath = imgs[int(gambar[0])]
+            elif len(gambar) > 1:
+                p, i = 0, 0
+                while p not in QUIT and p not in FOLLOW:
+                    stdscr.move(idx[i], x + width//2 + len(gambar[i]) + 1)
+                    stdscr.refresh()
+                    curses.curs_set(1)
+                    p = pad.getch()
+                    if p in SCROLL_DOWN:
+                        i += 1
+                    elif p in SCROLL_UP:
+                        i -= 1
+                    i = i % len(gambar)
+
+                curses.curs_set(0)
+                if p in FOLLOW:
+                    impath = imgs[int(gambar[i])]
+
+            if impath != "":
+                impath = impath.replace("../", "")
+                impath = impath.replace("./", "")
+                for i in ebook.file.namelist():
+                    if re.search(impath, i) != None:
+                        imgsrc = i
+                        break
+                open_media(pad, ebook, imgsrc)
         if k == curses.KEY_RESIZE:
             curses.resize_term(rows, cols)
             rows, cols = stdscr.getmaxyx()
@@ -403,7 +476,7 @@ def main(stdscr, file):
         y = int(state[epub.path]["pos"])
     else:
         state[epub.path] = {}
-        idx = 1
+        idx = 0
         y = 0
         width = 80
 
