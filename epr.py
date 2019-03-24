@@ -90,7 +90,7 @@ class Epub:
     def get_meta(self):
         meta = []
         # why self.file.read(self.rootfile) problematic
-        cont = ET.fromstring(self.file.open(self.rootfile).read()) 
+        cont = ET.fromstring(self.file.open(self.rootfile).read())
         for i in cont.findall("OPF:metadata/*", NS):
             if i.text != None:
                 meta.append([re.sub("{.*?}", "", i.tag), i.text])
@@ -262,9 +262,9 @@ def help(stdscr):
     pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
 
     while key_help not in HELP and key_help not in QUIT:
-        if key_help == SCROLL_UP and y > 0:
+        if key_help in SCROLL_UP and y > 0:
             y -= 1
-        if key_help == SCROLL_DOWN and y < len(src_lines) - hi + 4:
+        if key_help in SCROLL_DOWN and y < len(src_lines) - hi + 4:
             y += 1
         if key_help == curses.KEY_RESIZE:
             break
@@ -284,7 +284,7 @@ def to_text(src, width):
             ent = str(ent)
             ent = re.search("(?<=undefined entity &).*?;(?=:)", ent).group()
             src = re.sub("&" + ent, html5[ent], src.decode("utf-8")).encode("utf-8")
-        
+
     body = root.find("XHTML:body", NS)
     text = []
     # for i in body.findall("*", NS):
@@ -322,7 +322,6 @@ def reader(stdscr, ebook, index, width, y=0):
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     while True:
-        # if k == QUIT or k == 3:
         if k in QUIT:
             for i in state:
                 state[i]["lastread"] = str(0)
@@ -415,12 +414,16 @@ def main(stdscr, file):
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        file = False
+        file, todel = False, []
         for i in state:
             if not os.path.exists(i):
-                del state[i]
+                todel.append(i)
             elif state[i]["lastread"] == str(1):
                 file = i
+
+        for i in todel:
+            del state[i]
+
         if not file:
             print("ERROR: Found no last read file.")
             print(__doc__)
