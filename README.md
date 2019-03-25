@@ -19,12 +19,13 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Limitations
 
-- [x] ~~saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name.~~
-- [x] ~~doesn't support images~~
-- [x] ~~doesn't support epub3~~
-- minimum width: 22 cols
-- resizing terminal will reset to beginning of current chapter
-- saved state (reading position & width, but not reading chapter) will reset 
+- [x] ~~Saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name.~~
+- [x] ~~Doesn't support images~~
+- [x] ~~Doesn't support epub3~~
+- Might not work well on heavily formatted epub, those with tables or code blocks, since initially written to read fictions.
+- Minimum width: 22 cols
+- Resizing terminal will reset to beginning of current chapter
+- Saved state (reading position & width, but not reading chapter) will reset 
   if current terminal size is incompatible with latest reading state
 
 ## Dependencies
@@ -32,7 +33,7 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - ~~`html2text`~~
 - `curses`
 
-Started from `v1.2.0`, `epr.py` no longer requires `html2text` library. But if you have trouble with it, you probably need to go use older version provided in release page.
+Started from `v1.2.0`, `epr.py` no longer requires `html2text` library. But if you have trouble with it or if you prefer reading in markdown, you probably need to go use older version provided in release page.
 
 ## Usage
 
