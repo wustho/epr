@@ -502,6 +502,7 @@ def reader(stdscr, ebook, index, width, y=0):
         k = pad.getch()
 
 def main(stdscr, file):
+    curses.use_default_colors()
     stdscr.keypad(True)
     curses.curs_set(0)
     stdscr.clear()
