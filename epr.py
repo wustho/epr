@@ -37,8 +37,9 @@ import tempfile
 import shutil
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
-from html.entities import html5
+from html import unescape
 from subprocess import run
+# from html.entities import html5
 
 locale.setlocale(locale.LC_ALL, "")
 # code = locale.getpreferredencoding()
@@ -107,7 +108,8 @@ class Epub:
         # EPUB3
         self.version = cont.getroot().get("version")
         if self.version == "2.0":
-            self.toc = self.rootdir + cont.find("OPF:manifest/*[@id='ncx']", NS).get("href")
+            # self.toc = self.rootdir + cont.find("OPF:manifest/*[@id='ncx']", NS).get("href")
+            self.toc = self.rootdir + cont.find("OPF:manifest/*[@media-type='application/x-dtbncx+xml']", NS).get("href")
         elif self.version == "3.0":
             self.toc = self.rootdir + cont.find("OPF:manifest/*[@properties='nav']", NS).get("href")
 
@@ -126,7 +128,8 @@ class Epub:
         manifest = []
         for i in cont.findall("OPF:manifest/*", NS):
             # EPUB3
-            if i.get("id") != "ncx" and i.get("properties") != "nav":
+            # if i.get("id") != "ncx" and i.get("properties") != "nav":
+            if i.get("media-type") != "application/x-dtbncx+xml" and i.get("properties") != "nav":
                 manifest.append([
                     i.get("id"),
                     i.get("href")
@@ -157,7 +160,8 @@ class Epub:
             for j in navPoints:
                 # EPUB3
                 if self.version == "2.0":
-                    if i == unquote(j.find("DAISY:content", NS).get("src")):
+                    # if i == unquote(j.find("DAISY:content", NS).get("src")):
+                    if re.search(i, unquote(j.find("DAISY:content", NS).get("src"))) != None:
                         name = j.find("DAISY:navLabel/DAISY:text", NS).text
                         break
                 elif self.version == "3.0":
@@ -305,7 +309,7 @@ def open_media(scr, epub, src):
     try:
         with os.fdopen(fd, "wb") as tmp:
             tmp.write(epub.file.read(src))
-        run([VWR, path], shell=True)
+        run(VWR +" "+ path, shell=True)
         k = scr.getch()
     finally:
         os.remove(path)
@@ -318,7 +322,8 @@ def to_text(src, width):
         except Exception as ent:
             ent = str(ent)
             ent = re.search("(?<=undefined entity &).*?;(?=:)", ent).group()
-            src = re.sub("&" + ent, html5[ent], src.decode("utf-8")).encode("utf-8")
+            src = re.sub("&" + ent, "", src.decode("utf-8")).encode("utf-8")
+            # src = re.sub("&" + ent, html5[ent], src.decode("utf-8")).encode("utf-8")
 
     body = root.find("XHTML:body", NS)
     text, imgs = [], []
@@ -327,14 +332,43 @@ def to_text(src, width):
     for i in body.findall(".//*"):
         if re.match("{"+NS["XHTML"]+"}h[0-9]", i.tag) != None:
             for j in i.itertext():
-                text.append(j.rjust(width//2 + len(j)//2 - RIGHTPADDING))
+                text.append(unescape(j).rjust(width//2 + len(unescape(j))//2 - RIGHTPADDING))
                 text.append("")
-        elif re.match("{"+NS["XHTML"]+"}p", i.tag) != None:
+        elif re.match("{"+NS["XHTML"]+"}p", i.tag) != None and i.find("XHTML:dd, NS") == None:
             par = ET.tostring(i, encoding="utf-8").decode("utf-8")
+            par = unescape(par)
             par = re.sub("<[^>]*>", "", par)
             par = re.sub("\t", "", par)
             par = textwrap.fill(par, width)
             text += par.splitlines() + [""]
+        elif re.match("{"+NS["XHTML"]+"}dt", i.tag) != None:
+            dt = ET.tostring(i, encoding="utf-8").decode("utf-8")
+            dt = unescape(dt)
+            dt = re.sub("<[^>]*>", "", dt)
+            dt = re.sub("\t", "", dt)
+            dt = textwrap.fill(dt, width - 2)
+            text += [""] + ["[EPR:UL]" + j for j in dt.splitlines()] # + [""]
+        # elif re.match("{"+NS["XHTML"]+"}dd", i.tag) != None:
+        #     dd = ET.tostring(i, encoding="utf-8").decode("utf-8")
+        #     dd = unescape(dd)
+        #     dd = re.sub("<[^>]*>", "", dd)
+        #     dd = re.sub("\t", "", dd)
+        #     dd = textwrap.fill(dd, width - 4)
+        #     text += ["    " + j for j in dd.splitlines()] + [""]
+        elif re.match("{"+NS["XHTML"]+"}(pre|blockquote)", i.tag) != None:
+            block = ET.tostring(i, encoding="utf-8").decode("utf-8")
+            block = unescape(block)
+            block = re.sub("<[^>]*>", "", block)
+            block = re.sub("\t", "", block)
+            block = textwrap.fill(block, width - 2)
+            text += ["  [EPR:IT]" + j for j in block.splitlines()] + [""]
+        elif re.match("{"+NS["XHTML"]+"}li", i.tag) != None:
+            li = ET.tostring(i, encoding="utf-8").decode("utf-8")
+            li = unescape(li)
+            li = re.sub("<[^>]*>", "", li)
+            li = re.sub("\t", "", li)
+            li = textwrap.fill(li, width - 2)
+            text += [" - " + j if n == 0 else "   " + j for n, j in enumerate(li.splitlines())] + [""]
         elif re.match("{"+NS["XHTML"]+"}img", i.tag) != None:
             text.append("[IMG:{}]".format(len(imgs)))
             text.append("")
@@ -358,6 +392,12 @@ def reader(stdscr, ebook, index, width, y=0):
     for i in range(len(src_lines)):
         if re.search("\[IMG:[0-9]+\]", src_lines[i]):
             pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
+        elif src_lines[i].replace("[EPR:BD]", "") != src_lines[i]:
+            pad.addstr(i, 0, src_lines[i].replace("[EPR:BD]", ""), curses.A_BOLD)
+        elif src_lines[i].replace("[EPR:UL]", "") != src_lines[i]:
+            pad.addstr(i, 0, src_lines[i].replace("[EPR:UL]", ""), curses.A_UNDERLINE)
+        elif src_lines[i].replace("[EPR:IT]", "") != src_lines[i]:
+            pad.addstr(i, 0, src_lines[i].replace("[EPR:IT]", ""), curses.A_ITALIC)
         else:
             pad.addstr(i, 0, src_lines[i])
     pad.addstr(i, width//2 - 10 - RIGHTPADDING, "-- End of Chapter --", curses.A_REVERSE)
