@@ -347,7 +347,7 @@ def to_text(src, width):
             dt = re.sub("<[^>]*>", "", dt)
             dt = re.sub("\t", "", dt)
             dt = textwrap.fill(dt, width - 2)
-            text += [""] + ["[EPR:UL]" + j for j in dt.splitlines()] # + [""]
+            text += [""] + ["  " + j for j in dt.splitlines()] # + [""]
         # elif re.match("{"+NS["XHTML"]+"}dd", i.tag) != None:
         #     dd = ET.tostring(i, encoding="utf-8").decode("utf-8")
         #     dd = unescape(dd)
@@ -361,7 +361,7 @@ def to_text(src, width):
             block = re.sub("<[^>]*>", "", block)
             block = re.sub("\t", "", block)
             block = textwrap.fill(block, width - 2)
-            text += ["  [EPR:IT]" + j for j in block.splitlines()] + [""]
+            text += ["  " + j for j in block.splitlines()] + [""]
         elif re.match("{"+NS["XHTML"]+"}li", i.tag) != None:
             li = ET.tostring(i, encoding="utf-8").decode("utf-8")
             li = unescape(li)
@@ -392,12 +392,6 @@ def reader(stdscr, ebook, index, width, y=0):
     for i in range(len(src_lines)):
         if re.search("\[IMG:[0-9]+\]", src_lines[i]):
             pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
-        elif src_lines[i].replace("[EPR:BD]", "") != src_lines[i]:
-            pad.addstr(i, 0, src_lines[i].replace("[EPR:BD]", ""), curses.A_BOLD)
-        elif src_lines[i].replace("[EPR:UL]", "") != src_lines[i]:
-            pad.addstr(i, 0, src_lines[i].replace("[EPR:UL]", ""), curses.A_UNDERLINE)
-        elif src_lines[i].replace("[EPR:IT]", "") != src_lines[i]:
-            pad.addstr(i, 0, src_lines[i].replace("[EPR:IT]", ""), curses.A_ITALIC)
         else:
             pad.addstr(i, 0, src_lines[i])
     pad.addstr(i, width//2 - 10 - RIGHTPADDING, "-- End of Chapter --", curses.A_REVERSE)
