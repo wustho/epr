@@ -334,7 +334,7 @@ def to_text(src, width):
             for j in i.itertext():
                 text.append(unescape(j).rjust(width//2 + len(unescape(j))//2 - RIGHTPADDING))
                 text.append("")
-        elif re.match("{"+NS["XHTML"]+"}p", i.tag) != None and i.find("XHTML:dd, NS") == None:
+        elif re.match("{"+NS["XHTML"]+"}(p|div)", i.tag) != None:
             par = ET.tostring(i, encoding="utf-8").decode("utf-8")
             par = unescape(par)
             par = re.sub("<[^>]*>", "", par)
