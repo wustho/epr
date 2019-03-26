@@ -30,7 +30,7 @@ After you close the viewer and go back to reading, you might notice that `epr.py
 
 - `curses`
 
-NOTE: See _branch html2text_ for more stable `epr.py` than this main branch. But it requires module `html2text` and render epub into markdown syntax rather than plain text.
+NOTE: Checkout `v2.0.0-html2text` from the release page for more stable `epr.py` than this main branch. But it _requires_ module `html2text` and render epub into markdown (which works better to read some nonfiction reference epub) rather than plain text (which in my personal case, works fine to read fictions).
 
 ## Usage
 
