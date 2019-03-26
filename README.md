@@ -7,7 +7,7 @@ CLI Epub reader written in Python 3.7 with features:
 - Remembers last read file (just run `epr.py` without any argument)
 - Remembers last reading state for each file (per file saved state written to `$HOME/.epr`)
 - Adjustable text area width
-- Supports EPUB3 (tested on some, still no media supports though)
+- Supports EPUB3 (no audio support)
 - Secondary vim-like bindings
 - Supports image
 

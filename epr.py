@@ -69,7 +69,7 @@ WIDEN = ord("=")
 META = ord("m")
 TOC = ord("t")
 FOLLOW = {10}
-QUIT = {ord("q"), 3}
+QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
 
 NS = {"DAISY" : "http://www.daisy.org/z3986/2005/ncx/",
@@ -240,7 +240,6 @@ def meta(stdscr, ebook):
     key_meta = 0
 
     mdata = []
-    src = ""
     for i in ebook.get_meta():
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
