@@ -20,9 +20,6 @@ After you close the viewer and go back to reading, you might notice that `epr.py
 
 ## Limitations
 
-- [x] ~~Saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name.~~
-- [x] ~~Doesn't support images~~
-- [x] ~~Doesn't support epub3~~
 - Minimum width: 22 cols
 - Resizing terminal will reset to beginning of current chapter
 - Saved state (reading position & width, but not reading chapter) will reset 
