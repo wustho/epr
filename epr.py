@@ -35,9 +35,9 @@ import textwrap
 import json
 import tempfile
 import shutil
+import html2text
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
-from html import unescape
 from subprocess import run
 # from html.entities import html5
 
@@ -96,6 +96,12 @@ else:
         if shutil.which(i) != None:
             VWR = i
             break
+
+parser = html2text.HTML2Text()
+parser.ignore_emphasis = True
+parser.ignore_images = False
+parser.re_md_chars_matcher_all = False
+parser.skip_internal_links = True
 
 class Epub:
     def __init__(self, fileepub):
@@ -314,68 +320,6 @@ def open_media(scr, epub, src):
     finally:
         os.remove(path)
 
-def to_text(src, width):
-    while True:
-        try:
-            root = ET.fromstring(src)
-            break
-        except Exception as ent:
-            ent = str(ent)
-            ent = re.search("(?<=undefined entity &).*?;(?=:)", ent).group()
-            src = re.sub("&" + ent, "", src.decode("utf-8")).encode("utf-8")
-            # src = re.sub("&" + ent, html5[ent], src.decode("utf-8")).encode("utf-8")
-
-    body = root.find("XHTML:body", NS)
-    text, imgs = [], []
-    # for i in body.findall("*", NS):
-    # for i in body.findall(".//XHTML:p", NS):
-    for i in body.findall(".//*"):
-        if re.match("{"+NS["XHTML"]+"}h[0-9]", i.tag) != None:
-            for j in i.itertext():
-                text.append(unescape(j).rjust(width//2 + len(unescape(j))//2 - RIGHTPADDING))
-                text.append("")
-        elif re.match("{"+NS["XHTML"]+"}(p|div)", i.tag) != None:
-            par = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            par = unescape(par)
-            par = re.sub("<[^>]*>", "", par)
-            par = re.sub("\t", "", par)
-            par = textwrap.fill(par, width)
-            text += par.splitlines() + [""]
-        elif re.match("{"+NS["XHTML"]+"}dt", i.tag) != None:
-            dt = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            dt = unescape(dt)
-            dt = re.sub("<[^>]*>", "", dt)
-            dt = re.sub("\t", "", dt)
-            dt = textwrap.fill(dt, width - 2)
-            text += [""] + ["  " + j for j in dt.splitlines()] # + [""]
-        # elif re.match("{"+NS["XHTML"]+"}dd", i.tag) != None:
-        #     dd = ET.tostring(i, encoding="utf-8").decode("utf-8")
-        #     dd = unescape(dd)
-        #     dd = re.sub("<[^>]*>", "", dd)
-        #     dd = re.sub("\t", "", dd)
-        #     dd = textwrap.fill(dd, width - 4)
-        #     text += ["    " + j for j in dd.splitlines()] + [""]
-        elif re.match("{"+NS["XHTML"]+"}(pre|blockquote)", i.tag) != None:
-            block = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            block = unescape(block)
-            block = re.sub("<[^>]*>", "", block)
-            block = re.sub("\t", "", block)
-            block = textwrap.fill(block, width - 2)
-            text += ["  " + j for j in block.splitlines()] + [""]
-        elif re.match("{"+NS["XHTML"]+"}li", i.tag) != None:
-            li = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            li = unescape(li)
-            li = re.sub("<[^>]*>", "", li)
-            li = re.sub("\t", "", li)
-            li = textwrap.fill(li, width - 2)
-            text += [" - " + j if n == 0 else "   " + j for n, j in enumerate(li.splitlines())] + [""]
-        elif re.match("{"+NS["XHTML"]+"}img", i.tag) != None:
-            text.append("[IMG:{}]".format(len(imgs)))
-            text.append("")
-            imgs.append(unquote(i.attrib["src"]))
-
-    return text + [""], imgs
-
 def reader(stdscr, ebook, index, width, y=0):
     k = 0
     rows, cols = stdscr.getmaxyx()
@@ -385,16 +329,24 @@ def reader(stdscr, ebook, index, width, y=0):
 
     content = ebook.file.open(ebook.get_contents()[index][1]).read()
 
-    src_lines, imgs = to_text(content, width)
+    parser.body_width, imgs = width, []
+    src = parser.handle(content.decode("utf-8"))
+    src_lines = src.splitlines() + [""]
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
     for i in range(len(src_lines)):
-        if re.search("\[IMG:[0-9]+\]", src_lines[i]):
+        if re.search("!\[.*?\]\(.*\)", src_lines[i]) != None:
+            imgsrc = re.search("!\[.*?\]\(.*\)", src_lines[i]).group()
+            imgsrc = re.sub("!\[.*?\]\(", "", imgsrc)
+            imgsrc = re.sub("\)$", "", imgsrc)
+            imgs.append(unquote(imgsrc))
+            
+            src_lines[i] = re.sub("!\[.*?\]\(.*\)", "[IMG:{}]".format(len(imgs)-1), src_lines[i])
             pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
         else:
             pad.addstr(i, 0, src_lines[i])
-    pad.addstr(i, width//2 - 10 - RIGHTPADDING, "-- End of Chapter --", curses.A_REVERSE)
+    pad.addstr(i, width//2 - 10, "-- End of Chapter --", curses.A_REVERSE)
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     while True:
