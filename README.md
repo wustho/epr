@@ -20,9 +20,6 @@ After you close the viewer and go back to reading, you might notice that `epr.py
 
 ## Limitations
 
-- [x] ~~Saving state doesn't work with a file that has `[]` in its name, e.g. `[EPUB]some_title.epub`. As workaround, just rename and remove `[]` from its name.~~
-- [x] ~~Doesn't support images~~
-- [x] ~~Doesn't support epub3~~
 - Might not work well on heavily formatted epub, those with tables or code blocks, since initially written to read fictions.
 - Minimum width: 22 cols
 - Resizing terminal will reset to beginning of current chapter
@@ -31,10 +28,9 @@ After you close the viewer and go back to reading, you might notice that `epr.py
 
 ## Dependencies
 
-- ~~`html2text`~~
 - `curses`
 
-Started from `v1.2.0`, `epr.py` no longer requires `html2text` library. But if you have trouble with it or if you prefer reading in markdown, you probably need to go use older version provided in release page.
+NOTE: See _branch html2text_ for more stable `epr.py` than this main branch. But it requires module `html2text` and render epub into markdown syntax rather than plain text.
 
 ## Usage
 
