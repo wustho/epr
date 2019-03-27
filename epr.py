@@ -329,20 +329,27 @@ def reader(stdscr, ebook, index, width, y=0):
 
     content = ebook.file.open(ebook.get_contents()[index][1]).read()
 
-    parser.body_width, imgs = width, []
+    # parser.body_width, imgs = width, []
+    imgs, src_lines = [], []
+    parser.body_width = False
+    parser.single_line_break = True
     src = parser.handle(content.decode("utf-8"))
-    src_lines = src.splitlines() + [""]
+    # src_lines = src.splitlines() + [""]
+
+    for i in src.splitlines():
+        j = i
+        if re.search("!\[.*?\]\(.*\)", i) != None:
+            imgsrc = re.search("!\[.*?\]\(.*\)", i).group()
+            imgsrc = re.sub("!\[.*?\]\(", "", imgsrc)
+            imgsrc = re.sub("\)$", "", imgsrc)
+            imgs.append(unquote(imgsrc))
+            j = re.sub("!\[.*?\]\(.*\)", "[IMG:{}]".format(len(imgs)-1), i)
+        src_lines += textwrap.fill(j.strip(), width).splitlines() + [""]
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
     for i in range(len(src_lines)):
-        if re.search("!\[.*?\]\(.*\)", src_lines[i]) != None:
-            imgsrc = re.search("!\[.*?\]\(.*\)", src_lines[i]).group()
-            imgsrc = re.sub("!\[.*?\]\(", "", imgsrc)
-            imgsrc = re.sub("\)$", "", imgsrc)
-            imgs.append(unquote(imgsrc))
-            
-            src_lines[i] = re.sub("!\[.*?\]\(.*\)", "[IMG:{}]".format(len(imgs)-1), src_lines[i])
+        if re.search("\[IMG:[0-9]+\]", src_lines[i]) != None:
             pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
         else:
             pad.addstr(i, 0, src_lines[i])
