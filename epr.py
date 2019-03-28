@@ -160,7 +160,7 @@ class Epub:
         if self.version == "2.0":
             navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
         elif self.version == "3.0":
-            navPoints = toc.findall("XHTML:body/XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
+            navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
         for i in contents:
             name = "unknown"
             for j in navPoints:
