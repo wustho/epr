@@ -326,6 +326,9 @@ def to_text(src, width):
 
     body = root.find("XHTML:body", NS)
     text, imgs = [], []
+    para = ["p", "div", "q", "dt", "dd", "blockquote"]
+    para = ["{" + NS["XHTML"] + "}" + i for i in para]
+    outpara = False
     # for i in body.findall("*", NS):
     # for i in body.findall(".//XHTML:p", NS):
     for i in body.findall(".//*"):
@@ -333,41 +336,19 @@ def to_text(src, width):
             for j in i.itertext():
                 text.append(unescape(j).rjust(width//2 + len(unescape(j))//2 - RIGHTPADDING))
                 text.append("")
-        elif re.match("{"+NS["XHTML"]+"}(p|div)", i.tag) != None:
+        elif i.tag in para:
+            for j in i.findall(".//*"):
+                if j.tag in para:
+                    outpara = True
+                    break
+            if outpara:
+                continue
             par = ET.tostring(i, encoding="utf-8").decode("utf-8")
             par = unescape(par)
             par = re.sub("<[^>]*>", "", par)
             par = re.sub("\t", "", par)
             par = textwrap.fill(par, width)
             text += par.splitlines() + [""]
-        elif re.match("{"+NS["XHTML"]+"}dt", i.tag) != None:
-            dt = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            dt = unescape(dt)
-            dt = re.sub("<[^>]*>", "", dt)
-            dt = re.sub("\t", "", dt)
-            dt = textwrap.fill(dt, width - 2)
-            text += [""] + ["  " + j for j in dt.splitlines()] # + [""]
-        # elif re.match("{"+NS["XHTML"]+"}dd", i.tag) != None:
-        #     dd = ET.tostring(i, encoding="utf-8").decode("utf-8")
-        #     dd = unescape(dd)
-        #     dd = re.sub("<[^>]*>", "", dd)
-        #     dd = re.sub("\t", "", dd)
-        #     dd = textwrap.fill(dd, width - 4)
-        #     text += ["    " + j for j in dd.splitlines()] + [""]
-        elif re.match("{"+NS["XHTML"]+"}(pre|blockquote)", i.tag) != None:
-            block = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            block = unescape(block)
-            block = re.sub("<[^>]*>", "", block)
-            block = re.sub("\t", "", block)
-            block = textwrap.fill(block, width - 2)
-            text += ["  " + j for j in block.splitlines()] + [""]
-        elif re.match("{"+NS["XHTML"]+"}li", i.tag) != None:
-            li = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            li = unescape(li)
-            li = re.sub("<[^>]*>", "", li)
-            li = re.sub("\t", "", li)
-            li = textwrap.fill(li, width - 2)
-            text += [" - " + j if n == 0 else "   " + j for n, j in enumerate(li.splitlines())] + [""]
         elif re.match("{"+NS["XHTML"]+"}img", i.tag) != None:
             text.append("[IMG:{}]".format(len(imgs)))
             text.append("")
