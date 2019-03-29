@@ -331,17 +331,12 @@ def to_text(src, width):
     # for i in body.findall("*", NS):
     # for i in body.findall(".//XHTML:p", NS):
     for i in body.findall(".//*"):
-        outpara = False
         if re.match("{"+NS["XHTML"]+"}h[0-9]", i.tag) != None:
             for j in i.itertext():
                 text.append(unescape(j).rjust(width//2 + len(unescape(j))//2 - RIGHTPADDING))
                 text.append("")
         elif i.tag in para:
-            for j in i.findall(".//*"):
-                if j.tag in para:
-                    outpara = True
-                    break
-            if outpara:
+            if len(set(para) & set([j.tag for j in i.findall(".//*")])) > 0:
                 continue
             par = ET.tostring(i, encoding="utf-8").decode("utf-8")
             par = unescape(par)
