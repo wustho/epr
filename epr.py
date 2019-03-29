@@ -326,12 +326,12 @@ def to_text(src, width):
 
     body = root.find("XHTML:body", NS)
     text, imgs = [], []
-    para = ["p", "div", "q", "dt", "dd", "blockquote"]
+    para = ["p", "div", "q", "dt", "dd", "blockquote", "pre", "li"]
     para = ["{" + NS["XHTML"] + "}" + i for i in para]
-    outpara = False
     # for i in body.findall("*", NS):
     # for i in body.findall(".//XHTML:p", NS):
     for i in body.findall(".//*"):
+        outpara = False
         if re.match("{"+NS["XHTML"]+"}h[0-9]", i.tag) != None:
             for j in i.itertext():
                 text.append(unescape(j).rjust(width//2 + len(unescape(j))//2 - RIGHTPADDING))
