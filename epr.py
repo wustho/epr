@@ -327,7 +327,11 @@ def to_text(src, width):
     body = root.find("XHTML:body", NS)
     text, imgs = [], []
     para = ["p", "div", "q", "dt", "dd", "blockquote", "pre", "li"]
+    inde = ["q", "dt", "dd", "blockquote", "pre"]
+    bull = ["li"]
     para = ["{" + NS["XHTML"] + "}" + i for i in para]
+    inde = ["{" + NS["XHTML"] + "}" + i for i in inde]
+    bull = ["{" + NS["XHTML"] + "}" + i for i in bull]
     # for i in body.findall("*", NS):
     # for i in body.findall(".//XHTML:p", NS):
     for i in body.findall(".//*"):
@@ -342,8 +346,15 @@ def to_text(src, width):
             par = unescape(par)
             par = re.sub("<[^>]*>", "", par)
             par = re.sub("\t", "", par)
-            par = textwrap.fill(par, width)
-            text += par.splitlines() + [""]
+            if i.tag in inde:
+                par = textwrap.fill(par, width - 2)
+                text += ["  "+j for j in par.splitlines()] + [""]
+            elif i.tag in bull:
+                par = textwrap.fill(par, width - 3)
+                text += [" - "+j if par.splitlines()[0] == j else "   "+j for j in par.splitlines()] + [""]
+            else:
+                par = textwrap.fill(par, width)
+                text += par.splitlines() + [""]
         elif re.match("{"+NS["XHTML"]+"}img", i.tag) != None:
             text.append("[IMG:{}]".format(len(imgs)))
             text.append("")
