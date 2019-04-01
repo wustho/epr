@@ -16,14 +16,13 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 ## Opening an Image
 Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it (`q` to cancel).
 
-After you close the viewer and go back to reading, you might notice that `epr.py` lagging one keypress (I don't know how to explain, just feel it yourself), it happens to make sure that the image doesn't get deleted before you finish viewing it.
+After you close the viewer and go back to reading, you might notice that `epr.py` lagging one keypress, it happens to make sure that the image doesn't get deleted before you finish viewing it.
 
 ## Limitations
 
-- Might not work well on heavily formatted epub, those with tables or code blocks, since initially written to read fictions.
 - Minimum width: 22 cols
-- Resizing terminal will reset to beginning of current chapter
-- Saved state (reading position & width, but not reading chapter) will reset 
+- Resizing terminal & text area width will reset to beginning of current chapter
+- Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
 
 ## Dependencies
