@@ -213,7 +213,7 @@ class HTMLtoLines(HTMLParser):
 
     def handle_startendtag(self, tag, attrs):
         if tag == "br":
-            self.text += ["", ""]
+            self.text += [""]
         elif tag == "img":
             for i in attrs:
                 if i[0] == "src":
