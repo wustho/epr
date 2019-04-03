@@ -39,6 +39,7 @@ import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from html import unescape
 from subprocess import run
+from html.parser import HTMLParser
 # from html.entities import html5
 
 locale.setlocale(locale.LC_ALL, "")
@@ -175,6 +176,94 @@ class Epub:
             ])
 
         return namedcontents
+
+class HTMLtoLines(HTMLParser):
+    global para, inde, bull, hide
+    para = {"p", "div"}
+    inde = {"q", "dt", "dd", "blockquote", "pre"}
+    bull = {"li"}
+    hide = {"script", "style", "head"}
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.head = []
+        self.text = [""]
+        self.imgs = []
+        self.heap = False
+        self.inde = False
+        self.bull = False
+        self.hide = False
+
+    def handle_starttag(self, tag, attrs):
+        if re.match("h[1-6]", tag) != None:
+            self.heap = True
+        elif tag in para:
+            if self.inde:
+                self.text[-1] += "[EPR:INDE]"
+            elif self.bull:
+                self.text[-1] += "[EPR:BULL]"
+        elif tag in inde:
+            self.text[-1] += "[EPR:INDE]"
+            self.inde = True
+        elif tag in bull:
+            self.text[-1] += "[EPR:BULL]"
+            self.bull = True
+        elif tag in hide:
+            self.hide = True
+
+    def handle_startendtag(self, tag, attrs):
+        if tag == "br":
+            self.text += ["", ""]
+        elif tag == "img":
+            for i in attrs:
+                if i[0] == "src":
+                    self.text.append("[IMG:{}]".format(len(self.imgs)))
+                    self.imgs.append(unquote(i[1]))
+
+    def handle_endtag(self, tag):
+        if re.match("h[1-6]", tag) != None:
+            self.heap = False
+            self.text.append("")
+        elif tag in para:
+            self.text.append("")
+        elif tag in hide:
+            self.hide = False
+        elif tag in inde:
+            if self.text[-1] != "":
+                self.text.append("")
+            self.inde = False
+        elif tag in bull:
+            if self.text[-1] != "":
+                self.text.append("")
+            self.bull = False
+        else:
+            if self.text[-1] != "":
+                self.text[-1] += " "
+
+    def handle_data(self, raw):
+        if raw and not self.hide:
+            if self.heap:
+                self.text[-1] += "[EPR:HEAD]"+raw.lstrip()
+            else:
+                line = unescape(re.sub(r"\s+", " ", raw.lstrip()))
+                self.text[-1] += line
+
+    def get_lines(self, width):
+        text = []
+        for i in self.text:
+            if re.match(r"\[EPR:HEAD\]", i) != None:
+                tmp = i.replace("[EPR:HEAD]", "")
+                text += [tmp.rjust(width//2 + len(tmp)//2 - RIGHTPADDING)] + [""]
+            elif re.match(r"\[EPR:INDE\]", i) != None:
+                tmp = i.replace("[EPR:INDE]", "")
+                text += ["   "+j for j in textwrap.fill(tmp, width - 3).splitlines()] + [""]
+            elif re.match(r"\[EPR:BULL\]", i) != None:
+                tmp = i.replace("[EPR:BULL]", "")
+                tmp = textwrap.fill(tmp, width - 3).splitlines()
+                text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
+            else:
+                text += textwrap.fill(i, width).splitlines() + [""]
+        return text, self.imgs
 
 def toc(stdscr, ebook, index, width):
     rows, cols = stdscr.getmaxyx()
@@ -313,55 +402,6 @@ def open_media(scr, epub, src):
     finally:
         os.remove(path)
 
-def to_text(src, width):
-    while True:
-        try:
-            root = ET.fromstring(src)
-            break
-        except Exception as ent:
-            ent = str(ent)
-            ent = re.search("(?<=undefined entity &).*?;(?=:)", ent).group()
-            src = re.sub("&" + ent, "", src.decode("utf-8")).encode("utf-8")
-            # src = re.sub("&" + ent, html5[ent], src.decode("utf-8")).encode("utf-8")
-
-    body = root.find("XHTML:body", NS)
-    text, imgs = [], []
-    para = ["p", "div", "q", "dt", "dd", "blockquote", "pre", "li"]
-    inde = ["q", "dt", "dd", "blockquote", "pre"]
-    bull = ["li"]
-    para = ["{" + NS["XHTML"] + "}" + i for i in para]
-    inde = ["{" + NS["XHTML"] + "}" + i for i in inde]
-    bull = ["{" + NS["XHTML"] + "}" + i for i in bull]
-    # for i in body.findall("*", NS):
-    # for i in body.findall(".//XHTML:p", NS):
-    for i in body.findall(".//*"):
-        if re.match("{"+NS["XHTML"]+"}h[0-9]", i.tag) != None:
-            for j in i.itertext():
-                text.append(unescape(j).rjust(width//2 + len(unescape(j))//2 - RIGHTPADDING))
-                text.append("")
-        elif i.tag in para:
-            if len(set(para) & set([j.tag for j in i.findall(".//*")])) > 0:
-                continue
-            par = ET.tostring(i, encoding="utf-8").decode("utf-8")
-            par = unescape(par)
-            par = re.sub("<[^>]*>", "", par)
-            par = re.sub("\t", "", par)
-            if i.tag in inde:
-                par = textwrap.fill(par, width - 2)
-                text += ["  "+j for j in par.splitlines()] + [""]
-            elif i.tag in bull:
-                par = textwrap.fill(par, width - 3)
-                text += [" - "+j if par.splitlines()[0] == j else "   "+j for j in par.splitlines()] + [""]
-            else:
-                par = textwrap.fill(par, width)
-                text += par.splitlines() + [""]
-        elif re.match("{"+NS["XHTML"]+"}img", i.tag) != None:
-            text.append("[IMG:{}]".format(len(imgs)))
-            text.append("")
-            imgs.append(unquote(i.attrib["src"]))
-
-    return text + [""], imgs
-
 def reader(stdscr, ebook, index, width, y=0):
     k = 0
     rows, cols = stdscr.getmaxyx()
@@ -370,8 +410,16 @@ def reader(stdscr, ebook, index, width, y=0):
     stdscr.refresh()
 
     content = ebook.file.open(ebook.get_contents()[index][1]).read()
+    content = content.decode("utf-8")
 
-    src_lines, imgs = to_text(content, width)
+    parser = HTMLtoLines()
+    try:
+        parser.feed(content)
+        parser.close()
+    except:
+        pass
+
+    src_lines, imgs = parser.get_lines(width)
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)

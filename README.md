@@ -13,11 +13,6 @@ CLI Epub reader written in Python 3.7 with features:
 
 Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
-## Opening an Image
-Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it (`q` to cancel).
-
-After you close the viewer and go back to reading, you might notice that `epr.py` lagging one keypress, it happens to make sure that the image doesn't get deleted before you finish viewing it.
-
 ## Limitations
 
 - Minimum width: 22 cols
@@ -25,11 +20,20 @@ After you close the viewer and go back to reading, you might notice that `epr.py
 - Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
 
+## Opening an Image
+
+Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it (`q` to cancel).
+
+After you close the viewer and go back to reading, you might notice that `epr.py` lagging one keypress, it happens to make sure that the image doesn't get deleted before you finish viewing it.
+
+## Vanilla or Markdown?
+
+If you'd like to read epub in markdown format, checkout `v2.0.1-md` (which _requires_ module `html2text`) from release page.
+e.g. when you read nonfiction reference epub (like manual or documentation) rather than fiction one.
+
 ## Dependencies
 
 - `curses`
-
-NOTE: Checkout `v2.0.0-html2text` from the release page for more stable `epr.py` than this main branch. But it _requires_ module `html2text` and render epub into markdown (which works better to read some nonfiction reference epub) rather than plain text (which in my personal case, works fine to read fictions).
 
 ## Usage
 
