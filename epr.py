@@ -282,6 +282,7 @@ def toc(stdscr, ebook, index, width):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
     Y, X = 2, 2
+    oldindex = index
     toc = curses.newwin(hi, wi, Y, X)
     toc.box()
     toc.keypad(True)
@@ -323,7 +324,11 @@ def toc(stdscr, ebook, index, width):
             index += 1
             top = pad(src, index, top)
         if key_toc in FOLLOW:
-            reader(stdscr, ebook, index, width, 0)
+            if index == oldindex:
+                toc.clear()
+                toc.refresh()
+                return
+            return index
         key_toc = toc.getch()
 
     toc.clear()
@@ -458,8 +463,6 @@ def reader(stdscr, ebook, index, width, y=0):
         if k in SCROLL_UP:
             if y > 0:
                 y -= 1
-            # if y == 0 and index > 0:
-            #     reader(stdscr, ebook, index-1, width)
         if k in PAGE_UP:
             if y >= rows - LINEPRSRV:
                 y -= rows - LINEPRSRV
@@ -468,8 +471,6 @@ def reader(stdscr, ebook, index, width, y=0):
         if k in SCROLL_DOWN:
             if y < len(src_lines) - rows:
                 y += 1
-            # if y + rows >= len(src_lines):
-            #     reader(stdscr, ebook, index+1, width)
         if k in PAGE_DOWN:
             if y + rows - 2 <= len(src_lines) - rows:
                 y += rows - LINEPRSRV
@@ -478,9 +479,9 @@ def reader(stdscr, ebook, index, width, y=0):
                 if y < 0:
                     y = 0
         if k in CH_NEXT and index < len(ebook.get_contents()) - 1:
-            reader(stdscr, ebook, index+1, width)
+            return 1, width
         if k in CH_PREV and index > 0:
-            reader(stdscr, ebook, index-1, width)
+            return -1, width
         if k in CH_HOME:
             y = 0
         if k in CH_END:
@@ -488,19 +489,19 @@ def reader(stdscr, ebook, index, width, y=0):
             if y < 0:
                 y = 0
         if k == TOC:
-            toc(stdscr, ebook, index, width)
+            fllwd = toc(stdscr, ebook, index, width)
+            if fllwd != None:
+                return fllwd - index, width
         if k == META:
             meta(stdscr, ebook)
         if k in HELP:
             help(stdscr)
         if k == WIDEN and (width + 2) < cols:
             width += 2
-            reader(stdscr, ebook, index, width)
-            return
+            return 0, width
         if k == SHRINK and width >= 22:
             width -= 2
-            reader(stdscr, ebook, index, width)
-            return
+            return 0, width
         if k == ord("o") and VWR != None:
             gambar, idx = [], []
             for n, i in enumerate(src_lines[y:y+rows]):
@@ -540,10 +541,9 @@ def reader(stdscr, ebook, index, width, y=0):
         if k == curses.KEY_RESIZE:
             curses.resize_term(rows, cols)
             rows, cols = stdscr.getmaxyx()
-            # TODO
             if cols <= width:
                 width = cols - 2
-            reader(stdscr, ebook, index, width)
+            return 0, width
 
         pad.refresh(y,0, 0,x, rows-1,x+width)
         k = pad.getch()
@@ -570,7 +570,11 @@ def main(stdscr, file):
     if cols <= width:
         width = cols - 2
         y = 0
-    reader(stdscr, epub, idx, width, y)
+
+    while True:
+        incr, width = reader(stdscr, epub, idx, width, y)
+        idx += incr
+        y = 0
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
