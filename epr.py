@@ -197,14 +197,13 @@ class HTMLtoLines(HTMLParser):
         HTMLParser.__init__(self)
         self.text = [""]
         self.imgs = []
-        self.heap = False
         self.inde = False
         self.bull = False
         self.hide = False
 
     def handle_starttag(self, tag, attrs):
         if re.match("h[1-6]", tag) != None:
-            self.heap = True
+            self.text[-1] += "[EPR:HEAD]"
         elif tag in para:
             if self.inde:
                 self.text[-1] += "[EPR:INDE]"
@@ -222,6 +221,10 @@ class HTMLtoLines(HTMLParser):
     def handle_startendtag(self, tag, attrs):
         if tag == "br":
             self.text += [""]
+            if self.inde:
+                self.text[-1] += "[EPR:INDE]"
+            elif self.bull:
+                self.text[-1] += "[EPR:BULL]"
         elif tag == "img":
             for i in attrs:
                 if i[0] == "src":
@@ -231,7 +234,7 @@ class HTMLtoLines(HTMLParser):
 
     def handle_endtag(self, tag):
         if re.match("h[1-6]", tag) != None:
-            self.heap = False
+            self.text.append("")
             self.text.append("")
         elif tag in para:
             self.text.append("")
@@ -245,17 +248,18 @@ class HTMLtoLines(HTMLParser):
             if self.text[-1] != "":
                 self.text.append("")
             self.bull = False
-        else:
-            if self.text[-1] != "":
-                self.text[-1] += " "
 
     def handle_data(self, raw):
         if raw and not self.hide:
-            if self.heap:
-                self.text[-1] += "[EPR:HEAD]"+raw.lstrip()
+            if self.text[-1] == "" or re.match(r"\[EPR:(INDE|BULL)\]", self.text[-1]) != None:
+                tmp = raw.lstrip()
             else:
-                line = unescape(re.sub(r"\s+", " ", raw.lstrip()))
-                self.text[-1] += line
+                tmp = raw
+            # if self.heap:
+            #     self.text[-1] += "[EPR:HEAD]"+tmp
+            # else:
+            line = unescape(re.sub(r"\s+", " ", tmp))
+            self.text[-1] += line
 
     def get_lines(self, width):
         text = []
