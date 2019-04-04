@@ -47,6 +47,14 @@ locale.setlocale(locale.LC_ALL, "")
 
 if os.getenv("HOME") != None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
+    if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
+        configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
+        os.makedirs(configdir, exist_ok=True)
+        if os.path.isfile(statefile):
+            if os.path.isfile(os.path.join(configdir, ".epr")):
+                os.remove(os.path.join(configdir, ".epr"))
+            shutil.move(statefile, configdir)
+        statefile = os.path.join(configdir, ".epr")
 else:
     statefile = os.devnull
 
@@ -87,7 +95,8 @@ VWR_LIST = [
     "gnome-open",
     "gvfs-open",
     "xdg-open",
-    "kde-open"
+    "kde-open",
+    "firefox"
 ]
 VWR = None
 if sys.platform == "win32":
@@ -186,7 +195,6 @@ class HTMLtoLines(HTMLParser):
 
     def __init__(self):
         HTMLParser.__init__(self)
-        self.head = []
         self.text = [""]
         self.imgs = []
         self.heap = False
@@ -219,6 +227,7 @@ class HTMLtoLines(HTMLParser):
                 if i[0] == "src":
                     self.text.append("[IMG:{}]".format(len(self.imgs)))
                     self.imgs.append(unquote(i[1]))
+                    self.text.append("")
 
     def handle_endtag(self, tag):
         if re.match("h[1-6]", tag) != None:
