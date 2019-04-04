@@ -51,10 +51,10 @@ if os.getenv("HOME") != None:
         configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
         os.makedirs(configdir, exist_ok=True)
         if os.path.isfile(statefile):
-            if os.path.isfile(os.path.join(configdir, ".epr")):
-                os.remove(os.path.join(configdir, ".epr"))
-            shutil.move(statefile, configdir)
-        statefile = os.path.join(configdir, ".epr")
+            if os.path.isfile(os.path.join(configdir, "config")):
+                os.remove(os.path.join(configdir, "config"))
+            shutil.move(statefile, os.path.join(configdir, "config"))
+        statefile = os.path.join(configdir, "config")
 else:
     statefile = os.devnull
 
