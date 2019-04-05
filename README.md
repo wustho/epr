@@ -24,8 +24,6 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it (`q` to cancel).
 
-After you close the viewer and go back to reading, you might notice that `epr.py` lagging one keypress, it happens to make sure that the image doesn't get deleted before you finish viewing it.
-
 ## Vanilla or Markdown?
 
 If you'd like to read epub in markdown format, checkout `v2.0.1-md` (which _requires_ module `html2text`) from release page.

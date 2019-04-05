@@ -407,6 +407,19 @@ def help(stdscr):
     help.refresh()
     return
 
+def dots_path(curr, tofi):
+    candir = curr.split("/")
+    tofi = tofi.split("/")
+    alld = tofi.count("..")
+    t = len(candir)
+    candir = candir[0:t-alld-1]
+    try:
+        while True:
+            tofi.remove("..")
+    except ValueError:
+        pass
+    return "/".join(candir+tofi)
+
 def open_media(scr, epub, src):
     sfx = os.path.splitext(src)[1]
     fd, path = tempfile.mkstemp(suffix=sfx)
@@ -417,6 +430,7 @@ def open_media(scr, epub, src):
         k = scr.getch()
     finally:
         os.remove(path)
+    return k
 
 def reader(stdscr, ebook, index, width, y=0):
     k = 0
@@ -425,7 +439,9 @@ def reader(stdscr, ebook, index, width, y=0):
     stdscr.clear()
     stdscr.refresh()
 
-    content = ebook.file.open(ebook.get_contents()[index][1]).read()
+    chpath = ebook.get_contents()[index][1]
+
+    content = ebook.file.open(chpath).read()
     content = content.decode("utf-8")
 
     parser = HTMLtoLines()
@@ -529,13 +545,9 @@ def reader(stdscr, ebook, index, width, y=0):
                     impath = imgs[int(gambar[i])]
 
             if impath != "":
-                impath = impath.replace("../", "")
-                impath = impath.replace("./", "")
-                for i in ebook.file.namelist():
-                    if re.search(impath, i) is not None:
-                        imgsrc = i
-                        break
-                open_media(pad, ebook, imgsrc)
+                imgsrc = dots_path(chpath, impath)
+                k = open_media(pad, ebook, imgsrc)
+                continue
         if k == curses.KEY_RESIZE:
             curses.resize_term(rows, cols)
             rows, cols = stdscr.getmaxyx()
