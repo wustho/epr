@@ -40,10 +40,8 @@ from urllib.parse import unquote
 from html import unescape
 from subprocess import run
 from html.parser import HTMLParser
-# from html.entities import html5
 
 locale.setlocale(locale.LC_ALL, "")
-# code = locale.getpreferredencoding()
 
 if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
@@ -255,9 +253,6 @@ class HTMLtoLines(HTMLParser):
                 tmp = raw.lstrip()
             else:
                 tmp = raw
-            # if self.heap:
-            #     self.text[-1] += "[EPR:HEAD]"+tmp
-            # else:
             line = unescape(re.sub(r"\s+", " ", tmp))
             self.text[-1] += line
 
