@@ -45,7 +45,7 @@ from html.parser import HTMLParser
 locale.setlocale(locale.LC_ALL, "")
 # code = locale.getpreferredencoding()
 
-if os.getenv("HOME") != None:
+if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
     if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
         configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
@@ -81,14 +81,14 @@ FOLLOW = {10}
 QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
 
-NS = {"DAISY" : "http://www.daisy.org/z3986/2005/ncx/",
-      "OPF" : "http://www.idpf.org/2007/opf",
-      "CONT" : "urn:oasis:names:tc:opendocument:xmlns:container",
-      "XHTML" : "http://www.w3.org/1999/xhtml",
-      "EPUB" : "http://www.idpf.org/2007/ops"}
+NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
+      "OPF": "http://www.idpf.org/2007/opf",
+      "CONT": "urn:oasis:names:tc:opendocument:xmlns:container",
+      "XHTML": "http://www.w3.org/1999/xhtml",
+      "EPUB": "http://www.idpf.org/2007/ops"}
 
-RIGHTPADDING = 0 # default = 2
-LINEPRSRV = 0 # default = 2
+RIGHTPADDING = 0  # default = 2
+LINEPRSRV = 0  # default = 2
 
 VWR_LIST = [
     "feh",
@@ -103,7 +103,7 @@ if sys.platform == "win32":
     VWR = "start"
 else:
     for i in VWR_LIST:
-        if shutil.which(i) != None:
+        if shutil.which(i) is not None:
             VWR = i
             break
 
@@ -128,7 +128,7 @@ class Epub:
         # why self.file.read(self.rootfile) problematic
         cont = ET.fromstring(self.file.open(self.rootfile).read())
         for i in cont.findall("OPF:metadata/*", NS):
-            if i.text != None:
+            if i.text is not None:
                 meta.append([re.sub("{.*?}", "", i.tag), i.text])
         return meta
 
@@ -171,7 +171,7 @@ class Epub:
                 # EPUB3
                 if self.version == "2.0":
                     # if i == unquote(j.find("DAISY:content", NS).get("src")):
-                    if re.search(i, unquote(j.find("DAISY:content", NS).get("src"))) != None:
+                    if re.search(i, unquote(j.find("DAISY:content", NS).get("src"))) is not None:
                         name = j.find("DAISY:navLabel/DAISY:text", NS).text
                         break
                 elif self.version == "3.0":
@@ -202,7 +202,7 @@ class HTMLtoLines(HTMLParser):
         self.hide = False
 
     def handle_starttag(self, tag, attrs):
-        if re.match("h[1-6]", tag) != None:
+        if re.match("h[1-6]", tag) is not None:
             self.text[-1] += "[EPR:HEAD]"
         elif tag in para:
             if self.inde:
@@ -233,7 +233,7 @@ class HTMLtoLines(HTMLParser):
                     self.text.append("")
 
     def handle_endtag(self, tag):
-        if re.match("h[1-6]", tag) != None:
+        if re.match("h[1-6]", tag) is not None:
             self.text.append("")
             self.text.append("")
         elif tag in para:
@@ -251,7 +251,7 @@ class HTMLtoLines(HTMLParser):
 
     def handle_data(self, raw):
         if raw and not self.hide:
-            if self.text[-1] == "" or re.match(r"\[EPR:(INDE|BULL)\]", self.text[-1]) != None:
+            if self.text[-1] == "" or re.match(r"\[EPR:(INDE|BULL)\]", self.text[-1]) is not None:
                 tmp = raw.lstrip()
             else:
                 tmp = raw
@@ -264,13 +264,13 @@ class HTMLtoLines(HTMLParser):
     def get_lines(self, width):
         text = []
         for i in self.text:
-            if re.match(r"\[EPR:HEAD\]", i) != None:
+            if re.match(r"\[EPR:HEAD\]", i) is not None:
                 tmp = i.replace("[EPR:HEAD]", "")
                 text += [tmp.rjust(width//2 + len(tmp)//2 - RIGHTPADDING)] + [""]
-            elif re.match(r"\[EPR:INDE\]", i) != None:
+            elif re.match(r"\[EPR:INDE\]", i) is not None:
                 tmp = i.replace("[EPR:INDE]", "")
                 text += ["   "+j for j in textwrap.fill(tmp, width - 3).splitlines()] + [""]
-            elif re.match(r"\[EPR:BULL\]", i) != None:
+            elif re.match(r"\[EPR:BULL\]", i) is not None:
                 tmp = i.replace("[EPR:BULL]", "")
                 tmp = textwrap.fill(tmp, width - 3).splitlines()
                 text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
@@ -325,9 +325,7 @@ def toc(stdscr, ebook, index, width):
             top = pad(src, index, top)
         if key_toc in FOLLOW:
             if index == oldindex:
-                toc.clear()
-                toc.refresh()
-                return
+                break
             return index
         key_toc = toc.getch()
 
@@ -490,7 +488,7 @@ def reader(stdscr, ebook, index, width, y=0):
                 y = 0
         if k == TOC:
             fllwd = toc(stdscr, ebook, index, width)
-            if fllwd != None:
+            if fllwd is not None:
                 return fllwd - index, width
         if k == META:
             meta(stdscr, ebook)
@@ -502,11 +500,11 @@ def reader(stdscr, ebook, index, width, y=0):
         if k == SHRINK and width >= 22:
             width -= 2
             return 0, width
-        if k == ord("o") and VWR != None:
+        if k == ord("o") and VWR is not None:
             gambar, idx = [], []
             for n, i in enumerate(src_lines[y:y+rows]):
                 img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
-                if img != None:
+                if img is not None:
                     gambar.append(img.group())
                     idx.append(n)
 
@@ -534,7 +532,7 @@ def reader(stdscr, ebook, index, width, y=0):
                 impath = impath.replace("../", "")
                 impath = impath.replace("./", "")
                 for i in ebook.file.namelist():
-                    if re.search(impath, i) != None:
+                    if re.search(impath, i) is not None:
                         imgsrc = i
                         break
                 open_media(pad, ebook, imgsrc)
