@@ -1,1 +1,1 @@
-html2text
+html2text==2018.1.9

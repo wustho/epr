@@ -39,13 +39,19 @@ import html2text
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from subprocess import run
-# from html.entities import html5
 
 locale.setlocale(locale.LC_ALL, "")
-# code = locale.getpreferredencoding()
 
-if os.getenv("HOME") != None:
+if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
+    if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
+        configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
+        os.makedirs(configdir, exist_ok=True)
+        if os.path.isfile(statefile):
+            if os.path.isfile(os.path.join(configdir, "config")):
+                os.remove(os.path.join(configdir, "config"))
+            shutil.move(statefile, os.path.join(configdir, "config"))
+        statefile = os.path.join(configdir, "config")
 else:
     statefile = os.devnull
 
@@ -69,31 +75,32 @@ WIDEN = ord("=")
 META = ord("m")
 TOC = ord("t")
 FOLLOW = {10}
-QUIT = {ord("q"), 3}
+QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
 
-NS = {"DAISY" : "http://www.daisy.org/z3986/2005/ncx/",
-      "OPF" : "http://www.idpf.org/2007/opf",
-      "CONT" : "urn:oasis:names:tc:opendocument:xmlns:container",
-      "XHTML" : "http://www.w3.org/1999/xhtml",
-      "EPUB" : "http://www.idpf.org/2007/ops"}
+NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
+      "OPF": "http://www.idpf.org/2007/opf",
+      "CONT": "urn:oasis:names:tc:opendocument:xmlns:container",
+      "XHTML": "http://www.w3.org/1999/xhtml",
+      "EPUB": "http://www.idpf.org/2007/ops"}
 
-RIGHTPADDING = 0 # default = 2
-LINEPRSRV = 0 # default = 2
+RIGHTPADDING = 0  # default = 2
+LINEPRSRV = 0  # default = 2
 
 VWR_LIST = [
     "feh",
     "gnome-open",
     "gvfs-open",
     "xdg-open",
-    "kde-open"
+    "kde-open",
+    "firefox"
 ]
 VWR = None
 if sys.platform == "win32":
     VWR = "start"
 else:
     for i in VWR_LIST:
-        if shutil.which(i) != None:
+        if shutil.which(i) is not None:
             VWR = i
             break
 
@@ -124,7 +131,7 @@ class Epub:
         # why self.file.read(self.rootfile) problematic
         cont = ET.fromstring(self.file.open(self.rootfile).read())
         for i in cont.findall("OPF:metadata/*", NS):
-            if i.text != None:
+            if i.text is not None:
                 meta.append([re.sub("{.*?}", "", i.tag), i.text])
         return meta
 
@@ -167,7 +174,7 @@ class Epub:
                 # EPUB3
                 if self.version == "2.0":
                     # if i == unquote(j.find("DAISY:content", NS).get("src")):
-                    if re.search(i, unquote(j.find("DAISY:content", NS).get("src"))) != None:
+                    if re.search(i, unquote(j.find("DAISY:content", NS).get("src"))) is not None:
                         name = j.find("DAISY:navLabel/DAISY:text", NS).text
                         break
                 elif self.version == "3.0":
@@ -186,6 +193,7 @@ def toc(stdscr, ebook, index, width):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
     Y, X = 2, 2
+    oldindex = index
     toc = curses.newwin(hi, wi, Y, X)
     toc.box()
     toc.keypad(True)
@@ -227,7 +235,9 @@ def toc(stdscr, ebook, index, width):
             index += 1
             top = pad(src, index, top)
         if key_toc in FOLLOW:
-            reader(stdscr, ebook, index, width, 0)
+            if index == oldindex:
+                break
+            return index
         key_toc = toc.getch()
 
     toc.clear()
@@ -246,7 +256,6 @@ def meta(stdscr, ebook):
     key_meta = 0
 
     mdata = []
-    src = ""
     for i in ebook.get_meta():
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
@@ -309,6 +318,19 @@ def help(stdscr):
     help.refresh()
     return
 
+def dots_path(curr, tofi):
+    candir = curr.split("/")
+    tofi = tofi.split("/")
+    alld = tofi.count("..")
+    t = len(candir)
+    candir = candir[0:t-alld-1]
+    try:
+        while True:
+            tofi.remove("..")
+    except ValueError:
+        pass
+    return "/".join(candir+tofi)
+
 def open_media(scr, epub, src):
     sfx = os.path.splitext(src)[1]
     fd, path = tempfile.mkstemp(suffix=sfx)
@@ -319,6 +341,7 @@ def open_media(scr, epub, src):
         k = scr.getch()
     finally:
         os.remove(path)
+    return k
 
 def reader(stdscr, ebook, index, width, y=0):
     k = 0
@@ -327,7 +350,9 @@ def reader(stdscr, ebook, index, width, y=0):
     stdscr.clear()
     stdscr.refresh()
 
-    content = ebook.file.open(ebook.get_contents()[index][1]).read()
+    chpath = ebook.get_contents()[index][1]
+
+    content = ebook.file.open(chpath).read()
 
     # parser.body_width, imgs = width, []
     imgs, src_lines = [], []
@@ -344,7 +369,7 @@ def reader(stdscr, ebook, index, width, y=0):
             imgsrc = re.sub("\)$", "", imgsrc)
             imgs.append(unquote(imgsrc))
             j = re.sub("!\[.*?\]\(.*\)", "[IMG:{}]".format(len(imgs)-1), i)
-        src_lines += textwrap.fill(j.strip(), width).splitlines() + [""]
+        src_lines += textwrap.fill(j.strip(), width).splitlines() + ["", ""]
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
@@ -353,7 +378,7 @@ def reader(stdscr, ebook, index, width, y=0):
             pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
         else:
             pad.addstr(i, 0, src_lines[i])
-    pad.addstr(i, width//2 - 10, "-- End of Chapter --", curses.A_REVERSE)
+    pad.addstr(i, width//2 - 10 - RIGHTPADDING, "-- End of Chapter --", curses.A_REVERSE)
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     while True:
@@ -370,8 +395,6 @@ def reader(stdscr, ebook, index, width, y=0):
         if k in SCROLL_UP:
             if y > 0:
                 y -= 1
-            # if y == 0 and index > 0:
-            #     reader(stdscr, ebook, index-1, width)
         if k in PAGE_UP:
             if y >= rows - LINEPRSRV:
                 y -= rows - LINEPRSRV
@@ -380,8 +403,6 @@ def reader(stdscr, ebook, index, width, y=0):
         if k in SCROLL_DOWN:
             if y < len(src_lines) - rows:
                 y += 1
-            # if y + rows >= len(src_lines):
-            #     reader(stdscr, ebook, index+1, width)
         if k in PAGE_DOWN:
             if y + rows - 2 <= len(src_lines) - rows:
                 y += rows - LINEPRSRV
@@ -390,9 +411,9 @@ def reader(stdscr, ebook, index, width, y=0):
                 if y < 0:
                     y = 0
         if k in CH_NEXT and index < len(ebook.get_contents()) - 1:
-            reader(stdscr, ebook, index+1, width)
+            return 1, width
         if k in CH_PREV and index > 0:
-            reader(stdscr, ebook, index-1, width)
+            return -1, width
         if k in CH_HOME:
             y = 0
         if k in CH_END:
@@ -400,24 +421,24 @@ def reader(stdscr, ebook, index, width, y=0):
             if y < 0:
                 y = 0
         if k == TOC:
-            toc(stdscr, ebook, index, width)
+            fllwd = toc(stdscr, ebook, index, width)
+            if fllwd is not None:
+                return fllwd - index, width
         if k == META:
             meta(stdscr, ebook)
         if k in HELP:
             help(stdscr)
         if k == WIDEN and (width + 2) < cols:
             width += 2
-            reader(stdscr, ebook, index, width)
-            return
+            return 0, width
         if k == SHRINK and width >= 22:
             width -= 2
-            reader(stdscr, ebook, index, width)
-            return
-        if k == ord("o") and VWR != None:
+            return 0, width
+        if k == ord("o") and VWR is not None:
             gambar, idx = [], []
             for n, i in enumerate(src_lines[y:y+rows]):
                 img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
-                if img != None:
+                if img is not None:
                     gambar.append(img.group())
                     idx.append(n)
 
@@ -442,20 +463,15 @@ def reader(stdscr, ebook, index, width, y=0):
                     impath = imgs[int(gambar[i])]
 
             if impath != "":
-                impath = impath.replace("../", "")
-                impath = impath.replace("./", "")
-                for i in ebook.file.namelist():
-                    if re.search(impath, i) != None:
-                        imgsrc = i
-                        break
-                open_media(pad, ebook, imgsrc)
+                imgsrc = dots_path(chpath, impath)
+                k = open_media(pad, ebook, imgsrc)
+                continue
         if k == curses.KEY_RESIZE:
             curses.resize_term(rows, cols)
             rows, cols = stdscr.getmaxyx()
-            # TODO
             if cols <= width:
                 width = cols - 2
-            reader(stdscr, ebook, index, width)
+            return 0, width
 
         pad.refresh(y,0, 0,x, rows-1,x+width)
         k = pad.getch()
@@ -482,7 +498,11 @@ def main(stdscr, file):
     if cols <= width:
         width = cols - 2
         y = 0
-    reader(stdscr, epub, idx, width, y)
+
+    while True:
+        incr, width = reader(stdscr, epub, idx, width, y)
+        idx += incr
+        y = 0
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
