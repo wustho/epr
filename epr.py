@@ -544,8 +544,14 @@ def reader(stdscr, ebook, index, width, y=0):
                 k = open_media(pad, ebook, imgsrc)
                 continue
         if k == curses.KEY_RESIZE:
-            curses.resize_term(rows, cols)
-            rows, cols = stdscr.getmaxyx()
+            # contrast behav when resizing:
+            # is it curses's windows port _windows-curses_ module?
+            if sys.platform == "win32":
+                curses.resize_term(rows, cols)
+                rows, cols = stdscr.getmaxyx()
+            else:
+                rows, cols = stdscr.getmaxyx()
+                curses.resize_term(rows, cols)
             if cols <= width:
                 width = cols - 2
             return 0, width
