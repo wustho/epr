@@ -556,7 +556,10 @@ def reader(stdscr, ebook, index, width, y=0):
                 width = cols - 2
             return 0, width
 
-        pad.refresh(y,0, 0,x, rows-1,x+width)
+        try:
+            pad.refresh(y,0, 0,x, rows-1,x+width)
+        except curses.error:
+            pass
         k = pad.getch()
 
 def main(stdscr, file):
