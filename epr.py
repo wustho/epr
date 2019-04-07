@@ -231,13 +231,15 @@ def toc(stdscr, ebook, index, width):
         if key_toc in SCROLL_UP and index > 0:
             index -= 1
             top = pad(src, index, top)
-        if key_toc in SCROLL_DOWN and index + 1 < len(src):
+        elif key_toc in SCROLL_DOWN and index + 1 < len(src):
             index += 1
             top = pad(src, index, top)
-        if key_toc in FOLLOW:
+        elif key_toc in FOLLOW:
             if index == oldindex:
                 break
             return index
+        elif key_toc == curses.KEY_RESIZE:
+            return key_toc
         key_toc = toc.getch()
 
     toc.clear()
@@ -273,8 +275,10 @@ def meta(stdscr, ebook):
     while key_meta != META and key_meta not in QUIT:
         if key_meta in SCROLL_UP and y > 0:
             y -= 1
-        if key_meta in SCROLL_DOWN and y < len(src_lines) - hi + 4:
+        elif key_meta in SCROLL_DOWN and y < len(src_lines) - hi + 4:
             y += 1
+        elif key_meta == curses.KEY_RESIZE:
+            return key_meta
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
         key_meta = meta.getch()
 
@@ -307,10 +311,10 @@ def help(stdscr):
     while key_help not in HELP and key_help not in QUIT:
         if key_help in SCROLL_UP and y > 0:
             y -= 1
-        if key_help in SCROLL_DOWN and y < len(src_lines) - hi + 4:
+        elif key_help in SCROLL_DOWN and y < len(src_lines) - hi + 4:
             y += 1
-        if key_help == curses.KEY_RESIZE:
-            break
+        elif key_help == curses.KEY_RESIZE:
+            return key_help
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
         key_help = help.getch()
 
@@ -392,49 +396,56 @@ def reader(stdscr, ebook, index, width, y=0):
             with open(statefile, "w") as f:
                 json.dump(state, f, indent=4)
             sys.exit()
-        if k in SCROLL_UP:
+        elif k in SCROLL_UP:
             if y > 0:
                 y -= 1
-        if k in PAGE_UP:
+        elif k in PAGE_UP:
             if y >= rows - LINEPRSRV:
                 y -= rows - LINEPRSRV
             else:
                 y = 0
-        if k in SCROLL_DOWN:
+        elif k in SCROLL_DOWN:
             if y < len(src_lines) - rows:
                 y += 1
-        if k in PAGE_DOWN:
+        elif k in PAGE_DOWN:
             if y + rows - 2 <= len(src_lines) - rows:
                 y += rows - LINEPRSRV
             else:
                 y = len(src_lines) - rows
                 if y < 0:
                     y = 0
-        if k in CH_NEXT and index < len(ebook.get_contents()) - 1:
+        elif k in CH_NEXT and index < len(ebook.get_contents()) - 1:
             return 1, width
-        if k in CH_PREV and index > 0:
+        elif k in CH_PREV and index > 0:
             return -1, width
-        if k in CH_HOME:
+        elif k in CH_HOME:
             y = 0
-        if k in CH_END:
+        elif k in CH_END:
             y = len(src_lines) - rows
             if y < 0:
                 y = 0
-        if k == TOC:
+        elif k == TOC:
             fllwd = toc(stdscr, ebook, index, width)
             if fllwd is not None:
+                if fllwd == curses.KEY_RESIZE:
+                    k = fllwd
+                    continue
                 return fllwd - index, width
-        if k == META:
-            meta(stdscr, ebook)
-        if k in HELP:
-            help(stdscr)
-        if k == WIDEN and (width + 2) < cols:
+        elif k == META:
+            k = meta(stdscr, ebook)
+            if k == curses.KEY_RESIZE:
+                continue
+        elif k in HELP:
+            k = help(stdscr)
+            if k == curses.KEY_RESIZE:
+                continue
+        elif k == WIDEN and (width + 2) < cols:
             width += 2
             return 0, width
-        if k == SHRINK and width >= 22:
+        elif k == SHRINK and width >= 22:
             width -= 2
             return 0, width
-        if k == ord("o") and VWR is not None:
+        elif k == ord("o") and VWR is not None:
             gambar, idx = [], []
             for n, i in enumerate(src_lines[y:y+rows]):
                 img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
@@ -466,14 +477,23 @@ def reader(stdscr, ebook, index, width, y=0):
                 imgsrc = dots_path(chpath, impath)
                 k = open_media(pad, ebook, imgsrc)
                 continue
-        if k == curses.KEY_RESIZE:
-            curses.resize_term(rows, cols)
-            rows, cols = stdscr.getmaxyx()
+        elif k == curses.KEY_RESIZE:
+            # stated in pypi windows-curses page:
+            # to call resize_term right after KEY_RESIZE
+            if sys.platform == "win32":
+                curses.resize_term(rows, cols)
+                rows, cols = stdscr.getmaxyx()
+            else:
+                rows, cols = stdscr.getmaxyx()
+                curses.resize_term(rows, cols)
             if cols <= width:
                 width = cols - 2
             return 0, width
 
-        pad.refresh(y,0, 0,x, rows-1,x+width)
+        try:
+            pad.refresh(y,0, 0,x, rows-1,x+width)
+        except curses.error:
+            pass
         k = pad.getch()
 
 def main(stdscr, file):
