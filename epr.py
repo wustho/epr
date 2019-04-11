@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """
-Usage:
-    epr.py [EPUBFILE]
+Usages:
+    epr             read last epub
+    epr FILE        read FILE
+    epr -r          show reading history
+    epr STRINGS     read STRINGS (best match) from history
 
 Key binding:
     Help            : ?
     Quit            : q
-    Scroll down     : ARROW DOWN    j
-    Scroll up       : ARROW UP      k
-    Page down       : PGDN          J   SPC
-    Page up         : PGUP          K
-    Next chapter    : ARROW RIGHT   l
-    Prev chapter    : ARROW LEFT    h
-    Beginning of ch : HOME          g
-    End of ch       : END           G
+    Scroll down     : DOWN      j
+    Scroll up       : UP        k
+    Page down       : PGDN      J   SPC
+    Page up         : PGUP      K
+    Next chapter    : RIGHT     l
+    Prev chapter    : LEFT      h
+    Beginning of ch : HOME      g
+    End of ch       : END       G
     Open image      : o
     Shrink          : -
     Enlarge         : =
@@ -40,6 +43,7 @@ from urllib.parse import unquote
 from html import unescape
 from subprocess import run
 from html.parser import HTMLParser
+from difflib import SequenceMatcher as SM
 
 locale.setlocale(locale.LC_ALL, "")
 
@@ -634,7 +638,28 @@ if __name__ == "__main__":
             sys.exit("ERROR: Found no last read file.")
         else:
             curses.wrapper(main, file)
-    elif len(sys.argv) == 2 and sys.argv[1] not in ("-h", "--help"):
-        curses.wrapper(main, sys.argv[1])
     else:
-        print(__doc__)
+        if len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
+            curses.wrapper(main, sys.argv[1])
+        elif len({"-h", "--help"}.intersection(set(sys.argv[1:]))) != 0:
+            print(__doc__)
+        elif len({"-r"}.intersection(set(sys.argv[1:]))) != 0:
+            print("\nReading history:")
+            for i in state.keys():
+                print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+            print()
+        else:
+            val = cand = 0
+            for i in state.keys():
+                match_val = sum([j.size for j in SM(None, i.lower(), " ".join(sys.argv[1:]).lower()).get_matching_blocks()])
+                if match_val >= val:
+                    val = match_val
+                    cand = i
+            if val != 0:
+                curses.wrapper(main, cand)
+            else:
+                print("\nReading history:")
+                for i in state.keys():
+                    print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+                print()
+                sys.exit("ERROR: Found no matching history.")
