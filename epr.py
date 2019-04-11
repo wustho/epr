@@ -229,6 +229,12 @@ class HTMLtoLines(HTMLParser):
                     self.text.append("[IMG:{}]".format(len(self.imgs)))
                     self.imgs.append(unquote(i[1]))
                     self.text.append("")
+        elif tag == "image":
+            for i in attrs:
+                if i[0] == "xlink:href":
+                    self.text.append("[IMG:{}]".format(len(self.imgs)))
+                    self.imgs.append(unquote(i[1]))
+                    self.text.append("")
 
     def handle_endtag(self, tag):
         if re.match("h[1-6]", tag) is not None:
@@ -485,12 +491,20 @@ def reader(stdscr, ebook, index, width, y=0):
             if y < len(src_lines) - rows:
                 y += 1
         elif k in PAGE_DOWN:
-            if y + rows - 2 <= len(src_lines) - rows:
+            if y + rows - LINEPRSRV <= len(src_lines) - rows:
                 y += rows - LINEPRSRV
-            else:
-                y = len(src_lines) - rows
-                if y < 0:
-                    y = 0
+            elif len(src_lines) - y + LINEPRSRV > rows:
+                y += rows - LINEPRSRV
+                try:
+                    stdscr.clear()
+                    stdscr.refresh()
+                    pad.refresh(y,0, 0,x, len(src_lines)-y,x+width)
+                except curses.error:
+                    pass
+            # else:
+            #     y = len(src_lines) - rows
+            #     if y < 0:
+            #         y = 0
         elif k in CH_NEXT and index < len(ebook.get_contents()) - 1:
             return 1, width
         elif k in CH_PREV and index > 0:
@@ -568,6 +582,8 @@ def reader(stdscr, ebook, index, width, y=0):
             return 0, width
 
         try:
+            stdscr.clear()
+            stdscr.refresh()
             pad.refresh(y,0, 0,x, rows-1,x+width)
         except curses.error:
             pass
