@@ -6,7 +6,6 @@ CLI Epub reader written in Python 3.7 with features:
 
 - Remembers last read file (just run `epr.py` without any argument)
 - Remembers last reading state for each file (per file saved state written to `$HOME/.config/epr/config` or `$HOME/.epr` respectively depending on availability)
-- Easily read from history
 - Adjustable text area width
 - Supports EPUB3 (no audio support)
 - Secondary vim-like bindings
@@ -21,9 +20,9 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
 
-## Easily Read from History
+## Quickly Read from History
 
-Rather than invoking `epr.py /path/to/file` each time you are going to read, you might find it easier to do just `epr.py STRINGS`. If `STRINGS` is not any file, `epr.py` will choose from reading history, best matched `path/to/file` with those `STRINGS`. So, the more `STRINGS` you give the more accurate it will find.
+Rather than invoking `epr.py /path/to/file` each time you are going to read, you might find it easier to do just `epr.py STRINGS.` If `STRINGS` is not any file, `epr.py` will choose from reading history, best matched `path/to/file` with those `STRINGS.` So, the more `STRINGS` given the more accurate it will find.
 
 Run `epr.py -r` to show list of all reading history.
 
@@ -40,7 +39,7 @@ e.g. when you read nonfiction reference epub (like manual or documentation) rath
 
 - `curses`
 
-## Usage
+## Usages
 
 Usages:
 

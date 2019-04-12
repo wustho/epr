@@ -638,28 +638,27 @@ if __name__ == "__main__":
             sys.exit("ERROR: Found no last read file.")
         else:
             curses.wrapper(main, file)
+    elif len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
+        curses.wrapper(main, sys.argv[1])
+    elif len({"-h", "--help"}.intersection(set(sys.argv[1:]))) != 0:
+        print(__doc__)
+    elif len({"-r"}.intersection(set(sys.argv[1:]))) != 0:
+        print("\nReading history:")
+        for i in state.keys():
+            print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+        print()
     else:
-        if len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
-            curses.wrapper(main, sys.argv[1])
-        elif len({"-h", "--help"}.intersection(set(sys.argv[1:]))) != 0:
-            print(__doc__)
-        elif len({"-r"}.intersection(set(sys.argv[1:]))) != 0:
+        val = cand = 0
+        for i in state.keys():
+            match_val = sum([j.size for j in SM(None, i.lower(), " ".join(sys.argv[1:]).lower()).get_matching_blocks()])
+            if match_val >= val:
+                val = match_val
+                cand = i
+        if val != 0:
+            curses.wrapper(main, cand)
+        else:
             print("\nReading history:")
             for i in state.keys():
                 print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
-            print()
-        else:
-            val = cand = 0
-            for i in state.keys():
-                match_val = sum([j.size for j in SM(None, i.lower(), " ".join(sys.argv[1:]).lower()).get_matching_blocks()])
-                if match_val >= val:
-                    val = match_val
-                    cand = i
-            if val != 0:
-                curses.wrapper(main, cand)
-            else:
-                print("\nReading history:")
-                for i in state.keys():
-                    print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
                 print()
-                sys.exit("ERROR: Found no matching history.")
+            sys.exit("ERROR: Found no matching history.")
