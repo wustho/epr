@@ -1,2 +1,0 @@
-* TODO TOC: Remove unnamed chapter (indicated by "unknown") ???
-* TODO TOC: Add in-page scroll-to support (~href="foo.html#bar"~)

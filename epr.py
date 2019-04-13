@@ -167,7 +167,7 @@ class Epub:
             navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
         elif self.version == "3.0":
             navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
-        for i in contents:
+        for n, i in enumerate(contents):
             name = "unknown"
             for j in navPoints:
                 # EPUB3
@@ -182,7 +182,7 @@ class Epub:
                         break
 
             namedcontents.append([
-                name,
+                str(n+1)+". "+name,
                 self.rootdir + i
             ])
 
@@ -469,7 +469,7 @@ def reader(stdscr, ebook, index, width, y=0):
             pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
         else:
             pad.addstr(i, 0, src_lines[i])
-    pad.addstr(i, width//2 - 10 - RIGHTPADDING, "-- End of Chapter --", curses.A_REVERSE)
+    pad.addstr(i, width//2 - 6 - RIGHTPADDING, " <- End -> ", curses.A_REVERSE)
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     while True:

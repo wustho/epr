@@ -19,10 +19,19 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - Resizing terminal & text area width will reset to beginning of current chapter
 - Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
+- Some known issues mentioned at the bottom
 
 ## Quickly Read from History
 
-Rather than invoking `epr.py /path/to/file` each time you are going to read, you might find it easier to do just `epr.py STRINGS.` If `STRINGS` is not any file, `epr.py` will choose from reading history, best matched `path/to/file` with those `STRINGS.` So, the more `STRINGS` given the more accurate it will find.
+Rather than invoking `epr.py /path/to/file` each time you are going to read, you might find it easier to do just `epr.py STRINGS.`
+
+Example:
+
+``` shell
+$ epr.py dumas count mont
+```
+
+If `STRINGS` is not any file, `epr.py` will choose from reading history, best matched `path/to/file` with those `STRINGS.` So, the more `STRINGS` given the more accurate it will find.
 
 Run `epr.py -r` to show list of all reading history.
 
@@ -69,3 +78,30 @@ Enlarge         : =
 TOC             : t
 Metadata        : m
 ```
+
+## Known Issues
+
+- "unknown" chapters in TOC
+
+  This happens because not every chapter file (inside some epubs) is given navigation points.
+  Some epubs even won't let you navigate between chapter, thus you'll find all chapters named as
+  "unknown" using `epr.py` for these kind of epubs.
+
+- Skipped chapters in TOC
+
+  Example:
+
+  ```
+  Table of Contents
+  -----------------
+
+	  1. Title Page
+	  2. Chapter I
+	  3. Chapter V
+  ```
+
+  This happens because Chapter II to Chapter IV is probably in the same file with Chapter I,
+  but in different sections, e. g. `ch000.html#section1` and `ch000.html#section2.`
+
+  But don't worry, you should not miss any part to read. This just won't let you navigate
+  to some points using TOC.
