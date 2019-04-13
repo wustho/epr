@@ -464,12 +464,12 @@ def reader(stdscr, ebook, index, width, y=0):
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
-    for i in range(len(src_lines)):
-        if re.search("\[IMG:[0-9]+\]", src_lines[i]):
-            pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
+    for n, i in enumerate(src_lines):
+        if re.search("\[IMG:[0-9]+\]", i):
+            pad.addstr(n, width//2 - len(i)//2 - RIGHTPADDING, i, curses.A_REVERSE)
         else:
-            pad.addstr(i, 0, src_lines[i])
-    pad.addstr(i, width//2 - 6 - RIGHTPADDING, " <- End -> ", curses.A_REVERSE)
+            pad.addstr(n, 0, i)
+    pad.addstr(n, width//2 - 6 - RIGHTPADDING, " <- End -> ", curses.A_REVERSE)
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     while True:
@@ -510,9 +510,9 @@ def reader(stdscr, ebook, index, width, y=0):
             #     if y < 0:
             #         y = 0
         elif k in CH_NEXT and index < len(ebook.get_contents()) - 1:
-            return 1, width
+            return 1, width, 0
         elif k in CH_PREV and index > 0:
-            return -1, width
+            return -1, width, 0
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
@@ -525,7 +525,7 @@ def reader(stdscr, ebook, index, width, y=0):
                 if fllwd == curses.KEY_RESIZE:
                     k = fllwd
                     continue
-                return fllwd - index, width
+                return fllwd - index, width, 0
         elif k == META:
             k = meta(stdscr, ebook)
             if k == curses.KEY_RESIZE:
@@ -536,10 +536,10 @@ def reader(stdscr, ebook, index, width, y=0):
                 continue
         elif k == WIDEN and (width + 2) < cols:
             width += 2
-            return 0, width
+            return 0, width, 0
         elif k == SHRINK and width >= 22:
             width -= 2
-            return 0, width
+            return 0, width, 0
         elif k == ord("o") and VWR is not None:
             gambar, idx = [], []
             for n, i in enumerate(src_lines[y:y+rows]):
@@ -583,7 +583,7 @@ def reader(stdscr, ebook, index, width, y=0):
                 curses.resize_term(rows, cols)
             if cols <= width:
                 width = cols - 2
-            return 0, width
+            return 0, width, 0
 
         try:
             stdscr.clear()
@@ -617,9 +617,8 @@ def main(stdscr, file):
         y = 0
 
     while True:
-        incr, width = reader(stdscr, epub, idx, width, y)
+        incr, width, y = reader(stdscr, epub, idx, width, y)
         idx += incr
-        y = 0
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
