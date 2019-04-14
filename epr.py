@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
 """
-Usage:
-    epr.py [EPUBFILE]
+Usages:
+    epr             read last epub
+    epr FILE        read FILE
+    epr -r          show reading history
+    epr STRINGS     read STRINGS (best match) from history
 
 Key binding:
     Help            : ?
     Quit            : q
-    Scroll down     : ARROW DOWN    j
-    Scroll up       : ARROW UP      k
-    Page down       : PGDN          J   SPC
-    Page up         : PGUP          K
-    Next chapter    : ARROW RIGHT   l
-    Prev chapter    : ARROW LEFT    h
-    Beginning of ch : HOME          g
-    End of ch       : END           G
+    Scroll down     : DOWN      j
+    Scroll up       : UP        k
+    Page down       : PGDN      J   SPC
+    Page up         : PGUP      K
+    Next chapter    : RIGHT     l
+    Prev chapter    : LEFT      h
+    Beginning of ch : HOME      g
+    End of ch       : END       G
     Open image      : o
+    Search          : /
+    Next Occurence  : n
+    Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
     TOC             : t
@@ -39,6 +45,7 @@ import html2text
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from subprocess import run
+from difflib import SequenceMatcher as SM
 
 locale.setlocale(locale.LC_ALL, "")
 
@@ -87,6 +94,8 @@ NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
 RIGHTPADDING = 0  # default = 2
 LINEPRSRV = 0  # default = 2
 
+SEARCHPATTERN = None
+
 VWR_LIST = [
     "feh",
     "gnome-open",
@@ -109,6 +118,7 @@ parser.ignore_emphasis = True
 parser.ignore_images = False
 parser.re_md_chars_matcher_all = False
 parser.skip_internal_links = True
+parser.ignore_links = True
 
 class Epub:
     def __init__(self, fileepub):
@@ -168,7 +178,7 @@ class Epub:
             navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
         elif self.version == "3.0":
             navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
-        for i in contents:
+        for n, i in enumerate(contents):
             name = "unknown"
             for j in navPoints:
                 # EPUB3
@@ -183,7 +193,7 @@ class Epub:
                         break
 
             namedcontents.append([
-                name,
+                str(n+1)+". "+name,
                 self.rootdir + i
             ])
 
@@ -347,8 +357,164 @@ def open_media(scr, epub, src):
         os.remove(path)
     return k
 
+def searching(stdscr, pad, src, width, y, ch, tot):
+    global SEARCHPATTERN
+    rows, cols = stdscr.getmaxyx()
+    x = (cols - width) // 2
+    if SEARCHPATTERN is None:
+        stat = curses.newwin(1, cols, rows-1, 0)
+        stat.keypad(True)
+        curses.echo(1)
+        curses.curs_set(1)
+        SEARCHPATTERN = ""
+        stat.addstr(0, 0, "Pattern: " + SEARCHPATTERN)
+        stat.refresh()
+        while True:
+            ipt = stat.getch()
+            if ipt == 27:
+                stat.clear()
+                stat.refresh()
+                curses.echo(0)
+                curses.curs_set(0)
+                SEARCHPATTERN = None
+                return y
+            elif ipt == 10:
+                SEARCHPATTERN = "/"+SEARCHPATTERN
+                stat.clear()
+                stat.refresh()
+                curses.echo(0)
+                curses.curs_set(0)
+                break
+            # TODO: why different behaviour unix dos or win lin
+            elif ipt in {8, curses.KEY_BACKSPACE}:
+                SEARCHPATTERN = SEARCHPATTERN[:-1]
+            elif ipt == curses.KEY_RESIZE:
+                stat.clear()
+                stat.refresh()
+                curses.echo(0)
+                curses.curs_set(0)
+                SEARCHPATTERN = None
+                return curses.KEY_RESIZE
+            else:
+                SEARCHPATTERN += chr(ipt)
+
+            stat.clear()
+            stat.addstr(0, 0, "Pattern: " + SEARCHPATTERN)
+            stat.refresh()
+
+    if SEARCHPATTERN in {"?", "/"}:
+        SEARCHPATTERN = None
+        return y
+
+    found = []
+    pattern = re.compile(SEARCHPATTERN[1:])
+    for n, i in enumerate(src):
+        for j in pattern.finditer(i):
+            found.append([n, j.span()[0], j.span()[1] - j.span()[0]])
+
+    if found == []:
+        if SEARCHPATTERN[0] == "/" and ch + 1 < tot:
+            return 1
+        elif SEARCHPATTERN[0] == "?" and ch > 0:
+            return -1
+        else:
+            s = 0
+            while True:
+                if s in QUIT:
+                    SEARCHPATTERN = None
+                    stdscr.clear()
+                    stdscr.refresh()
+                    return y
+                elif s == ord("n") and ch == 0:
+                    SEARCHPATTERN = "/"+SEARCHPATTERN[1:]
+                    return 1
+                elif s == ord("N") and ch +1 == tot:
+                    SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
+                    return -1
+
+                stdscr.clear()
+                stdscr.addstr(rows-1, 0, " Finished searching: " + SEARCHPATTERN[1:] + " ", curses.A_REVERSE)
+                stdscr.refresh()
+                pad.refresh(y,0, 0,x, rows-2,x+width)
+                s = pad.getch()
+
+    sidx = len(found) - 1
+    if SEARCHPATTERN[0] == "/":
+        tmp = [i[0] for i in found]
+        tmp.append(y)
+        tmp.sort()
+        tmp = tmp[tmp.index(y)+1]
+        for n, i in enumerate(found):
+            if i[0] == tmp:
+                sidx = n
+                break
+
+    s = 0
+    msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
+        sidx + 1,
+        len(found),
+        ch+1, tot)
+    while True:
+        if s in QUIT:
+            SEARCHPATTERN = None
+            for i in found:
+                pad.chgat(i[0], i[1], i[2], curses.A_NORMAL)
+            stdscr.clear()
+            stdscr.refresh()
+            return y
+        elif s == ord("n"):
+            SEARCHPATTERN = "/"+SEARCHPATTERN[1:]
+            if sidx == len(found) - 1:
+                if ch + 1 < tot:
+                    return 1
+                else:
+                    s = 0
+                    msg = " Finished searching: " + SEARCHPATTERN[1:] + " "
+                    continue
+            else:
+                sidx += 1
+                msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
+                    sidx + 1,
+                    len(found),
+                    ch+1, tot)
+        elif s == ord("N"):
+            SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
+            if sidx == 0:
+                if ch > 0:
+                    return -1
+                else:
+                    s = 0
+                    msg = " Finished searching: " + SEARCHPATTERN[1:] + " "
+                    continue
+            else:
+                sidx -= 1
+                msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
+                    sidx + 1,
+                    len(found),
+                    ch+1, tot)
+        elif s == curses.KEY_RESIZE:
+            return curses.KEY_RESIZE
+
+        while found[sidx][0] not in list(range(y, y+rows-1)):
+            if found[sidx][0] > y:
+                y += rows - 1
+            else:
+                y -= rows - 1
+                if y < 0:
+                    y = 0
+
+        for n, i in enumerate(found):
+            attr = curses.A_REVERSE if n == sidx else curses.A_NORMAL
+            pad.chgat(i[0], i[1], i[2], attr)
+
+        stdscr.clear()
+        stdscr.addstr(rows-1, 0, msg, curses.A_REVERSE)
+        stdscr.refresh()
+        pad.refresh(y,0, 0,x, rows-2,x+width)
+        s = pad.getch()
+
 def reader(stdscr, ebook, index, width, y=0):
-    k = 0
+    k = 0 if SEARCHPATTERN is None else ord("/")
     rows, cols = stdscr.getmaxyx()
     x = (cols - width) // 2
     stdscr.clear()
@@ -382,7 +548,13 @@ def reader(stdscr, ebook, index, width, y=0):
             pad.addstr(i, width//2 - len(src_lines[i])//2 - RIGHTPADDING, src_lines[i], curses.A_REVERSE)
         else:
             pad.addstr(i, 0, src_lines[i])
-    pad.addstr(i, width//2 - 10 - RIGHTPADDING, "-- End of Chapter --", curses.A_REVERSE)
+    if index == 0:
+        suff = "     End --> "
+    elif index == len(ebook.get_contents()) - 1:
+        suff = " <-- End     "
+    else:
+        suff = " <-- End --> "
+    pad.addstr(i, width//2 - 7 - RIGHTPADDING, suff, curses.A_REVERSE)
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     while True:
@@ -408,16 +580,24 @@ def reader(stdscr, ebook, index, width, y=0):
             if y < len(src_lines) - rows:
                 y += 1
         elif k in PAGE_DOWN:
-            if y + rows - 2 <= len(src_lines) - rows:
+            if y + rows - LINEPRSRV <= len(src_lines) - rows:
                 y += rows - LINEPRSRV
-            else:
-                y = len(src_lines) - rows
-                if y < 0:
-                    y = 0
+            elif len(src_lines) - y + LINEPRSRV > rows:
+                y += rows - LINEPRSRV
+                try:
+                    stdscr.clear()
+                    stdscr.refresh()
+                    pad.refresh(y,0, 0,x, len(src_lines)-y,x+width)
+                except curses.error:
+                    pass
+            # else:
+            #     y = len(src_lines) - rows
+            #     if y < 0:
+            #         y = 0
         elif k in CH_NEXT and index < len(ebook.get_contents()) - 1:
-            return 1, width
+            return 1, width, 0
         elif k in CH_PREV and index > 0:
-            return -1, width
+            return -1, width, 0
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
@@ -430,7 +610,7 @@ def reader(stdscr, ebook, index, width, y=0):
                 if fllwd == curses.KEY_RESIZE:
                     k = fllwd
                     continue
-                return fllwd - index, width
+                return fllwd - index, width, 0
         elif k == META:
             k = meta(stdscr, ebook)
             if k == curses.KEY_RESIZE:
@@ -441,10 +621,19 @@ def reader(stdscr, ebook, index, width, y=0):
                 continue
         elif k == WIDEN and (width + 2) < cols:
             width += 2
-            return 0, width
+            return 0, width, 0
         elif k == SHRINK and width >= 22:
             width -= 2
-            return 0, width
+            return 0, width, 0
+        elif k == ord("/"):
+            fs = searching(stdscr, pad, src_lines, width, y, index, len(ebook.get_contents()))
+            if fs == curses.KEY_RESIZE:
+                k = fs
+                continue
+            elif SEARCHPATTERN is not None:
+                return fs, width, 0
+            else:
+                y = fs
         elif k == ord("o") and VWR is not None:
             gambar, idx = [], []
             for n, i in enumerate(src_lines[y:y+rows]):
@@ -488,7 +677,7 @@ def reader(stdscr, ebook, index, width, y=0):
                 curses.resize_term(rows, cols)
             if cols <= width:
                 width = cols - 2
-            return 0, width
+            return 0, width, 0
 
         try:
             pad.refresh(y,0, 0,x, rows-1,x+width)
@@ -520,9 +709,8 @@ def main(stdscr, file):
         y = 0
 
     while True:
-        incr, width = reader(stdscr, epub, idx, width, y)
+        incr, width, y = reader(stdscr, epub, idx, width, y)
         idx += incr
-        y = 0
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
@@ -541,7 +729,27 @@ if __name__ == "__main__":
             sys.exit("ERROR: Found no last read file.")
         else:
             curses.wrapper(main, file)
-    elif len(sys.argv) == 2 and sys.argv[1] not in ("-h", "--help"):
+    elif len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
         curses.wrapper(main, sys.argv[1])
-    else:
+    elif len({"-h", "--help"}.intersection(set(sys.argv[1:]))) != 0:
         print(__doc__)
+    elif len({"-r"}.intersection(set(sys.argv[1:]))) != 0:
+        print("\nReading history:")
+        for i in state.keys():
+            print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+        print()
+    else:
+        val = cand = 0
+        for i in state.keys():
+            match_val = sum([j.size for j in SM(None, i.lower(), " ".join(sys.argv[1:]).lower()).get_matching_blocks()])
+            if match_val >= val:
+                val = match_val
+                cand = i
+        if val != 0:
+            curses.wrapper(main, cand)
+        else:
+            print("\nReading history:")
+            for i in state.keys():
+                print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+                print()
+            sys.exit("ERROR: Found no matching history.")
