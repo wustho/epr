@@ -446,7 +446,7 @@ def open_media(scr, epub, src):
         os.remove(path)
     return k
 
-def searching(stdscr, pad, src, width, y):
+def searching(stdscr, pad, src, width, y, ch, tot):
     global SEARCHPATTERN
     rows, cols = stdscr.getmaxyx()
     x = (cols - width) // 2
@@ -456,7 +456,7 @@ def searching(stdscr, pad, src, width, y):
         curses.echo(1)
         curses.curs_set(1)
         SEARCHPATTERN = ""
-        stat.addstr(0, 0, "Search: " + SEARCHPATTERN)
+        stat.addstr(0, 0, "Pattern: " + SEARCHPATTERN)
         stat.refresh()
         while True:
             ipt = stat.getch()
@@ -477,11 +477,18 @@ def searching(stdscr, pad, src, width, y):
             # TODO: why different behaviour unix dos or win lin
             elif ipt in {8, curses.KEY_BACKSPACE}:
                 SEARCHPATTERN = SEARCHPATTERN[:-1]
+            elif ipt == curses.KEY_RESIZE:
+                stat.clear()
+                stat.refresh()
+                curses.echo(0)
+                curses.curs_set(0)
+                SEARCHPATTERN = None
+                return curses.KEY_RESIZE
             else:
                 SEARCHPATTERN += chr(ipt)
 
             stat.clear()
-            stat.addstr(0, 0, "Search: " + SEARCHPATTERN)
+            stat.addstr(0, 0, "Pattern: " + SEARCHPATTERN)
             stat.refresh()
 
     if SEARCHPATTERN in {"?", "/"}:
@@ -495,10 +502,30 @@ def searching(stdscr, pad, src, width, y):
             found.append([n, j.span()[0], j.span()[1] - j.span()[0]])
 
     if found == []:
-        if SEARCHPATTERN[0] == "/":
+        if SEARCHPATTERN[0] == "/" and ch + 1 < tot:
             return 1
-        else:
+        elif SEARCHPATTERN[0] == "?" and ch > 0:
             return -1
+        else:
+            s = 0
+            while True:
+                if s in QUIT:
+                    SEARCHPATTERN = None
+                    stdscr.clear()
+                    stdscr.refresh()
+                    return y
+                elif s == ord("n") and ch == 0:
+                    SEARCHPATTERN = "/"+SEARCHPATTERN[1:]
+                    return 1
+                elif s == ord("N") and ch +1 == tot:
+                    SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
+                    return -1
+
+                stdscr.clear()
+                stdscr.addstr(rows-1, 0, " Finished searching: " + SEARCHPATTERN[1:] + " ", curses.A_REVERSE)
+                stdscr.refresh()
+                pad.refresh(y,0, 0,x, rows-2,x+width)
+                s = pad.getch()
 
     sidx = len(found) - 1
     if SEARCHPATTERN[0] == "/":
@@ -512,6 +539,10 @@ def searching(stdscr, pad, src, width, y):
                 break
 
     s = 0
+    msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
+        sidx + 1,
+        len(found),
+        ch+1, tot)
     while True:
         if s in QUIT:
             SEARCHPATTERN = None
@@ -523,15 +554,33 @@ def searching(stdscr, pad, src, width, y):
         elif s == ord("n"):
             SEARCHPATTERN = "/"+SEARCHPATTERN[1:]
             if sidx == len(found) - 1:
-                return 1
+                if ch + 1 < tot:
+                    return 1
+                else:
+                    s = 0
+                    msg = " Finished searching: " + SEARCHPATTERN[1:] + " "
+                    continue
             else:
                 sidx += 1
+                msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
+                    sidx + 1,
+                    len(found),
+                    ch+1, tot)
         elif s == ord("N"):
             SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
             if sidx == 0:
-                return -1
+                if ch > 0:
+                    return -1
+                else:
+                    s = 0
+                    msg = " Finished searching: " + SEARCHPATTERN[1:] + " "
+                    continue
             else:
                 sidx -= 1
+                msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
+                    sidx + 1,
+                    len(found),
+                    ch+1, tot)
         elif s == curses.KEY_RESIZE:
             return curses.KEY_RESIZE
 
@@ -548,7 +597,7 @@ def searching(stdscr, pad, src, width, y):
             pad.chgat(i[0], i[1], i[2], attr)
 
         stdscr.clear()
-        stdscr.addstr(rows-1, 0, " Searching: " + SEARCHPATTERN[1:] + " ", curses.A_REVERSE)
+        stdscr.addstr(rows-1, 0, msg, curses.A_REVERSE)
         stdscr.refresh()
         pad.refresh(y,0, 0,x, rows-2,x+width)
         s = pad.getch()
@@ -659,7 +708,7 @@ def reader(stdscr, ebook, index, width, y=0):
             width -= 2
             return 0, width, 0
         elif k == ord("/"):
-            fs = searching(stdscr, pad, src_lines, width, y)
+            fs = searching(stdscr, pad, src_lines, width, y, index, len(ebook.get_contents()))
             if fs == curses.KEY_RESIZE:
                 k = fs
                 continue
@@ -744,8 +793,6 @@ def main(stdscr, file):
     while True:
         incr, width, y = reader(stdscr, epub, idx, width, y)
         idx += incr
-        if SEARCHPATTERN is not None:
-            idx = idx % len(epub.get_contents())
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
