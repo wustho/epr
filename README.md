@@ -19,6 +19,7 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - Resizing terminal & text area width will reset to beginning of current chapter
 - Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
+- Supports regex search only, so you might need to do `g|G` to get case insensitive search
 - Some known issues mentioned at the bottom
 
 ## Quickly Read from History
@@ -42,7 +43,7 @@ Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's o
 ## Vanilla or Markdown?
 
 If you'd like to read epub in markdown format, checkout `v2.0.1-md` (which _requires_ module `html2text`) from release page.
-e.g. when you read nonfiction reference epub (like manual or documentation) rather than fiction one.
+e. g. when you read nonfiction reference epub (like manual or documentation) rather than fiction one.
 
 ## Dependencies
 
@@ -73,6 +74,9 @@ Prev chapter    : LEFT      h
 Beginning of ch : HOME      g
 End of ch       : END       G
 Open image      : o
+Search          : /
+Next Occurence  : n
+Prev Occurence  : N
 Shrink          : -
 Enlarge         : =
 TOC             : t
@@ -80,6 +84,11 @@ Metadata        : m
 ```
 
 ## Known Issues
+
+- Search function can't find occurences that span across multiple lines
+
+  Only capable of finding pattern that span inside a single line not sentence.
+  So works effectively for finding word or letter. You might want to increase text area width to increase its reach.
 
 - "unknown" chapters in TOC
 
