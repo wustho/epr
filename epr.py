@@ -26,7 +26,7 @@ Key binding:
     TOC             : t
     Metadata        : m
 
-Version             : v2.1.0
+Version             : v2.1.1
 Development         : https://github.com/wustho/epr
 
 """
@@ -862,10 +862,7 @@ if __name__ == "__main__":
         epub = Epub(file)
         for i in epub.get_contents():
             content = epub.file.open(i[1]).read()
-            try:
-                content = content.decode("utf-8")  # cp1252
-            except UnicodeDecodeError:
-                pass
+            content = content.decode(locale.getpreferredencoding(), "ignore")  # utf-8
             parser = HTMLtoLines()
             try:
                 parser.feed(content)
