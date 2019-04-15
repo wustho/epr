@@ -51,37 +51,36 @@ e. g. when you read nonfiction reference epub (like manual or documentation) rat
 
 ## Usages
 
+```
 Usages:
+    epr             read last epub
+    epr EPUBFILE    read EPUBFILE
+    epr STRINGS     read STRINGS (best match) from history
 
-```
-epr             read last epub
-epr EPUBFILE    read EPUBFILE
-epr -r          show reading history
-epr STRINGS     read STRINGS (best match) from history
-epr -d [FILE]   dump epub
-```
+Options:
+    -r              show reading history
+    -d              dump epub
+    -h, --help      show this help message
 
 Key binding:
-
-```
-Help            : ?
-Quit            : q
-Scroll down     : DOWN      j
-Scroll up       : UP        k
-Page down       : PGDN      J   SPC
-Page up         : PGUP      K
-Next chapter    : RIGHT     l
-Prev chapter    : LEFT      h
-Beginning of ch : HOME      g
-End of ch       : END       G
-Open image      : o
-Search          : /
-Next Occurence  : n
-Prev Occurence  : N
-Shrink          : -
-Enlarge         : =
-TOC             : t
-Metadata        : m
+    Help            : ?
+    Quit            : q
+    Scroll down     : DOWN      j
+    Scroll up       : UP        k
+    Page down       : PGDN      J   SPC
+    Page up         : PGUP      K
+    Next chapter    : RIGHT     l
+    Prev chapter    : LEFT      h
+    Beginning of ch : HOME      g
+    End of ch       : END       G
+    Open image      : o
+    Search          : /
+    Next Occurence  : n
+    Prev Occurence  : N
+    Shrink          : -
+    Enlarge         : =
+    TOC             : t
+    Metadata        : m
 ```
 
 ## Known Issues

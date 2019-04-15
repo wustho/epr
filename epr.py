@@ -2,9 +2,12 @@
 """Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
-    epr -r          show reading history
     epr STRINGS     read STRINGS (best match) from history
-    epr -d [FILE]   dump epub
+
+Options:
+    -r              show reading history
+    -d              dump epub
+    -h, --help      show this help message
 
 Key binding:
     Help            : ?
@@ -33,7 +36,6 @@ Development         : https://github.com/wustho/epr
 
 import curses
 import zipfile
-import locale
 import sys
 import re
 import os
@@ -47,8 +49,6 @@ from html import unescape
 from subprocess import run
 from html.parser import HTMLParser
 from difflib import SequenceMatcher as SM
-
-locale.setlocale(locale.LC_ALL, "")
 
 if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
@@ -804,7 +804,7 @@ if __name__ == "__main__":
         args += sys.argv[1:]
 
     if len({"-h", "--help"} & set(args)) != 0:
-        print(__doc__)
+        print(__doc__.rstrip())
         sys.exit()
 
     if len({"-d"} & set(args)) != 0:
@@ -838,7 +838,7 @@ if __name__ == "__main__":
             if not os.path.exists(i):
                 todel.append(i)
             else:
-                match_val = sum([j.size for j in SM(None, i.lower(), " ".join(sys.argv[1:]).lower()).get_matching_blocks()])
+                match_val = sum([j.size for j in SM(None, i.lower(), " ".join(args).lower()).get_matching_blocks()])
                 if match_val >= val:
                     val = match_val
                     cand = i
@@ -862,7 +862,7 @@ if __name__ == "__main__":
         epub = Epub(file)
         for i in epub.get_contents():
             content = epub.file.open(i[1]).read()
-            content = content.decode(locale.getpreferredencoding(), "ignore")  # utf-8
+            content = content.decode("utf-8")
             parser = HTMLtoLines()
             try:
                 parser.feed(content)
@@ -870,10 +870,10 @@ if __name__ == "__main__":
             except:
                 pass
             src_lines = parser.get_lines()
+            # sys.stdout.reconfigure(encoding="utf-8")  # Python>=3.7
             for j in src_lines:
                 toprint = re.sub("\[EPR:[A-Z]{4}\]", "", j)
-                print(toprint)
-                print()
+                sys.stdout.buffer.write((toprint+"\n\n").encode("utf-8"))
         sys.exit()
 
     else:
