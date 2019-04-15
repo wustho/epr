@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""
-Usages:
+"""Usages:
     epr             read last epub
-    epr FILE        read FILE
-    epr -r          show reading history
+    epr EPUBFILE    read EPUBFILE
     epr STRINGS     read STRINGS (best match) from history
+
+Options:
+    -r              show reading history
+    -d              dump epub
+    -h, --help      show this help message
 
 Key binding:
     Help            : ?
@@ -26,14 +29,13 @@ Key binding:
     TOC             : t
     Metadata        : m
 
-Source:
-    https://github.com/wustho/epr.git
+Version             : v2.1.1
+Development         : https://github.com/wustho/epr
 
 """
 
 import curses
 import zipfile
-import locale
 import sys
 import re
 import os
@@ -47,8 +49,6 @@ from urllib.parse import unquote
 from subprocess import run
 from difflib import SequenceMatcher as SM
 
-locale.setlocale(locale.LC_ALL, "")
-
 if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
     if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
@@ -59,6 +59,8 @@ if os.getenv("HOME") is not None:
                 os.remove(os.path.join(configdir, "config"))
             shutil.move(statefile, os.path.join(configdir, "config"))
         statefile = os.path.join(configdir, "config")
+elif os.getenv("USERPROFILE") is not None:
+    statefile = os.path.join(os.getenv("USERPROFILE"), ".epr")
 else:
     statefile = os.devnull
 
@@ -114,11 +116,11 @@ else:
             break
 
 parser = html2text.HTML2Text()
-parser.ignore_emphasis = True
+parser.ignore_emphasis = False  # True
 parser.ignore_images = False
 parser.re_md_chars_matcher_all = False
-parser.skip_internal_links = True
-parser.ignore_links = True
+parser.skip_internal_links = False  # True
+parser.ignore_links = False  # True
 
 class Epub:
     def __init__(self, fileepub):
@@ -407,7 +409,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         return y
 
     found = []
-    pattern = re.compile(SEARCHPATTERN[1:])
+    pattern = re.compile(SEARCHPATTERN[1:], re.IGNORECASE)
     for n, i in enumerate(src):
         for j in pattern.finditer(i):
             found.append([n, j.span()[0], j.span()[1] - j.span()[0]])
@@ -539,7 +541,7 @@ def reader(stdscr, ebook, index, width, y=0):
             imgsrc = re.sub("\)$", "", imgsrc)
             imgs.append(unquote(imgsrc))
             j = re.sub("!\[.*?\]\(.*\)", "[IMG:{}]".format(len(imgs)-1), i)
-        src_lines += textwrap.fill(j.strip(), width).splitlines() + ["", ""]
+        src_lines += textwrap.fill(j.strip(), width).splitlines() + [""]
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
@@ -713,7 +715,21 @@ def main(stdscr, file):
         idx += incr
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
+    args = []
+    if sys.argv[1:] != []:
+        args += sys.argv[1:]
+
+    if len({"-h", "--help"} & set(args)) != 0:
+        print(__doc__.rstrip())
+        sys.exit()
+
+    if len({"-d"} & set(args)) != 0:
+        args.remove("-d")
+        dump = True
+    else:
+        dump = False
+
+    if args == []:
         file, todel = False, []
         for i in state:
             if not os.path.exists(i):
@@ -727,29 +743,48 @@ if __name__ == "__main__":
         if not file:
             print(__doc__)
             sys.exit("ERROR: Found no last read file.")
-        else:
-            curses.wrapper(main, file)
-    elif len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
-        curses.wrapper(main, sys.argv[1])
-    elif len({"-h", "--help"}.intersection(set(sys.argv[1:]))) != 0:
-        print(__doc__)
-    elif len({"-r"}.intersection(set(sys.argv[1:]))) != 0:
-        print("\nReading history:")
-        for i in state.keys():
-            print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
-        print()
+
+    elif os.path.isfile(args[0]):
+        file = args[0]
+
     else:
         val = cand = 0
+        todel = []
         for i in state.keys():
-            match_val = sum([j.size for j in SM(None, i.lower(), " ".join(sys.argv[1:]).lower()).get_matching_blocks()])
-            if match_val >= val:
-                val = match_val
-                cand = i
-        if val != 0:
-            curses.wrapper(main, cand)
+            if not os.path.exists(i):
+                todel.append(i)
+            else:
+                match_val = sum([j.size for j in SM(None, i.lower(), " ".join(args).lower()).get_matching_blocks()])
+                if match_val >= val:
+                    val = match_val
+                    cand = i
+        for i in todel:
+            del state[i]
+        with open(statefile, "w") as f:
+                json.dump(state, f, indent=4)
+        if val != 0 and len({"-r"} & set(args)) == 0:
+            file = cand
         else:
             print("\nReading history:")
             for i in state.keys():
                 print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+            if len({"-r"} & set(args)) != 0:
+                sys.exit()
+            else:
                 print()
-            sys.exit("ERROR: Found no matching history.")
+                sys.exit("ERROR: Found no matching history.")
+
+    if dump:
+        epub = Epub(file)
+        for i in epub.get_contents():
+            parser.body_width = False
+            parser.single_line_break = True
+            imgs = []
+            content = epub.file.open(i[1]).read()
+            src = parser.handle(content.decode("utf-8"))
+            for j in src.splitlines():
+                sys.stdout.buffer.write((j+"\n\n").encode("utf-8"))
+        sys.exit()
+
+    else:
+        curses.wrapper(main, file)

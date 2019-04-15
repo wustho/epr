@@ -19,7 +19,7 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - Resizing terminal & text area width will reset to beginning of current chapter
 - Saved state (reading position & width, but not reading chapter) will reset 
   if current terminal size is incompatible with latest reading state
-  - Supports regex search only, so you might need to do `g|G` to get case insensitive search
+  - Supports regex search only, so you might need to escape certain characters like `\.`
 - Some known issues mentioned at the bottom
 
 ## Quickly Read from History
@@ -52,44 +52,54 @@ e. g. when you read nonfiction reference epub (like manual or documentation) rat
 
 ## Usages
 
+```
 Usages:
+    epr             read last epub
+    epr EPUBFILE    read EPUBFILE
+    epr STRINGS     read STRINGS (best match) from history
 
-```
-epr             read last epub
-epr FILE        read FILE
-epr -r          show reading history
-epr STRINGS     read STRINGS (best match) from history
-```
+Options:
+    -r              show reading history
+    -d              dump epub
+    -h, --help      show this help message
 
 Key binding:
-
-```
-Help            : ?
-Quit            : q
-Scroll down     : DOWN      j
-Scroll up       : UP        k
-Page down       : PGDN      J   SPC
-Page up         : PGUP      K
-Next chapter    : RIGHT     l
-Prev chapter    : LEFT      h
-Beginning of ch : HOME      g
-End of ch       : END       G
-Open image      : o
-Search          : /
-Next Occurence  : n
-Prev Occurence  : N
-Shrink          : -
-Enlarge         : =
-TOC             : t
-Metadata        : m
+    Help            : ?
+    Quit            : q
+    Scroll down     : DOWN      j
+    Scroll up       : UP        k
+    Page down       : PGDN      J   SPC
+    Page up         : PGUP      K
+    Next chapter    : RIGHT     l
+    Prev chapter    : LEFT      h
+    Beginning of ch : HOME      g
+    End of ch       : END       G
+    Open image      : o
+    Search          : /
+    Next Occurence  : n
+    Prev Occurence  : N
+    Shrink          : -
+    Enlarge         : =
+    TOC             : t
+    Metadata        : m
 ```
 
 ## Known Issues
 
 - Search function can't find occurences that span across multiple lines
 
-  Only capable of finding pattern that span inside a single line not sentence.
-  So works effectively for finding word or letter. You might want to increase text area width to increase its reach.
+  Only capable of finding pattern that span inside a single line, not sentence.
+  So works more effectively for finding word or letter rather than long phrase or sentence.
+
+  As workarounds, You can increase text area width to increase its reach or dump
+  the content of epub using `-d` option, which will dump each paragraph into a single line separated by empty line (or lines depending on the epub), to be later piped into `grep`, `rg` etc. Pretty useful to find book quotes.
+
+  Example:
+
+  ```shell
+  # to get 1 paragraph before and after a paragraph containing "Overdue"
+  $ epr.py -d the_girl_next_door.epub | grep Overdue -C 2
+  ```
 
 - "unknown" chapters in TOC
 
