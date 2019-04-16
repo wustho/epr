@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 """\
-epr v2.1.2
-CLI Epub Reader
-
 Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
@@ -33,6 +30,7 @@ Key Binding:
     TOC             : t
     Metadata        : m
 
+v2.1.2
 MIT License
 Copyright (c) 2019 Benawi Adha
 https://github.com/wustho/epr
@@ -770,6 +768,8 @@ def reader(stdscr, ebook, index, width, y=0):
             return 0, width, 0
 
         try:
+            stdscr.clear()
+            stdscr.refresh()
             pad.refresh(y,0, 0,x, rows-1,x+width)
         except curses.error:
             pass
