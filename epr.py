@@ -29,7 +29,7 @@ Key binding:
     TOC             : t
     Metadata        : m
 
-Version             : v2.1.1
+Version             : v2.1.1-md
 Development         : https://github.com/wustho/epr
 
 """
