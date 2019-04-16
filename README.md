@@ -9,7 +9,7 @@ CLI Epub reader written in Python 3.7 with features:
 - Adjustable text area width
 - Supports EPUB3 (no audio support)
 - Secondary vim-like bindings
-- Supports image
+- Supports images
 
 Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
@@ -17,9 +17,9 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 - Minimum width: 22 cols
 - Resizing terminal & text area width will reset to beginning of current chapter
-- Saved state (reading position & width, but not reading chapter) will reset 
+- Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
-  - Supports regex search only, so you might need to escape certain characters like `\.`
+- Supports regex search only
 - Some known issues mentioned at the bottom
 
 ## Quickly Read from History
@@ -125,4 +125,3 @@ Key binding:
 
   But don't worry, you should not miss any part to read. This just won't let you navigate
   to some points using TOC.
-  

@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Usages:
+"""\
+epr v2.1.2-md
+CLI Epub Reader
+
+Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
-    epr STRINGS     read STRINGS (best match) from history
+    epr STRINGS     read matched STRINGS from history
 
 Options:
-    -r              show reading history
+    -r              print reading history
     -d              dump epub
-    -h, --help      show this help message
+    -h, --help      print short/long help
 
-Key binding:
+Key Binding:
     Help            : ?
     Quit            : q
     Scroll down     : DOWN      j
@@ -29,9 +33,9 @@ Key binding:
     TOC             : t
     Metadata        : m
 
-Version             : v2.1.1-md
-Development         : https://github.com/wustho/epr
-
+MIT License
+Copyright (c) 2019 Benawi Adha
+https://github.com/wustho/epr
 """
 
 import curses
@@ -309,13 +313,13 @@ def help(stdscr):
     help.addstr(2,2, "----")
     key_help = 0
 
-    src = __doc__
-    src_lines = src.split("\n")
+    src = re.search("Key Bind(\n|.)*", __doc__).group()
+    src_lines = src.splitlines()
 
     pad = curses.newpad(len(src_lines), wi - 2 )
     pad.keypad(True)
-    for i in range(len(src_lines)):
-        pad.addstr(i, 0, src_lines[i])
+    for n, i in enumerate(src_lines):
+        pad.addstr(n, 0, i)
     y = 0
     help.refresh()
     pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
@@ -323,7 +327,7 @@ def help(stdscr):
     while key_help not in HELP and key_help not in QUIT:
         if key_help in SCROLL_UP and y > 0:
             y -= 1
-        elif key_help in SCROLL_DOWN and y < len(src_lines) - hi + 4:
+        elif key_help in SCROLL_DOWN and y < len(src_lines) - hi + 6:
             y += 1
         elif key_help == curses.KEY_RESIZE:
             return key_help
@@ -369,7 +373,8 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         curses.echo(1)
         curses.curs_set(1)
         SEARCHPATTERN = ""
-        stat.addstr(0, 0, "Pattern: " + SEARCHPATTERN)
+        stat.addstr(0, 0, " Regex:", curses.A_REVERSE)
+        stat.addstr(0, 7, SEARCHPATTERN)
         stat.refresh()
         while True:
             ipt = stat.getch()
@@ -401,7 +406,8 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                 SEARCHPATTERN += chr(ipt)
 
             stat.clear()
-            stat.addstr(0, 0, "Pattern: " + SEARCHPATTERN)
+            stat.addstr(0, 0, " Regex:", curses.A_REVERSE)
+            stat.addstr(0, 7, SEARCHPATTERN)
             stat.refresh()
 
     if SEARCHPATTERN in {"?", "/"}:
@@ -442,12 +448,10 @@ def searching(stdscr, pad, src, width, y, ch, tot):
 
     sidx = len(found) - 1
     if SEARCHPATTERN[0] == "/":
-        tmp = [i[0] for i in found]
-        tmp.append(y)
-        tmp.sort()
-        tmp = tmp[tmp.index(y)+1]
+        if y > found[-1][0]:
+            return 1
         for n, i in enumerate(found):
-            if i[0] == tmp:
+            if i[0] >= y:
                 sidx = n
                 break
 
@@ -495,7 +499,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                     len(found),
                     ch+1, tot)
         elif s == curses.KEY_RESIZE:
-            return curses.KEY_RESIZE
+            return s
 
         while found[sidx][0] not in list(range(y, y+rows-1)):
             if found[sidx][0] > y:
@@ -720,7 +724,10 @@ if __name__ == "__main__":
         args += sys.argv[1:]
 
     if len({"-h", "--help"} & set(args)) != 0:
-        print(__doc__.rstrip())
+        hlp = __doc__.rstrip()
+        if "-h" in args:
+            hlp = re.search("(\n|.)*(?=\n\nKey)", hlp).group()
+        print(hlp)
         sys.exit()
 
     if len({"-d"} & set(args)) != 0:
