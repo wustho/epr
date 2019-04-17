@@ -294,6 +294,27 @@ class HTMLtoLines(HTMLParser):
                 text += textwrap.fill(i, width).splitlines() + [""]
         return text, self.imgs
 
+def pgup(pos, winhi, preservedline=0):
+    if pos >= winhi - preservedline:
+        return pos - winhi + preservedline
+    else:
+        return 0
+
+def pgdn(pos, tot, winhi, preservedline=0):
+    if pos + winhi <= tot - winhi:
+        return pos + winhi
+    else:
+        pos = tot - winhi
+        if pos < 0:
+            return 0
+        return pos
+
+def pgend(tot, winhi):
+    if tot - winhi >= 0:
+        return tot - winhi
+    else:
+        return 0
+
 def toc(stdscr, ebook, index, width):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
@@ -368,20 +389,31 @@ def meta(stdscr, ebook):
         data = re.sub("\t", "", data)
         mdata += textwrap.fill(i[0] + " : " + data, wi - 6).splitlines()
     src_lines = mdata
+    totlines = len(src_lines)
 
-    pad = curses.newpad(len(src_lines), wi - 2 )
+    pad = curses.newpad(totlines, wi - 2 )
     pad.keypad(True)
-    for i in range(len(src_lines)):
-        pad.addstr(i, 0, src_lines[i])
+    for n, i in enumerate(src_lines):
+        pad.addstr(n, 0, i)
     y = 0
     meta.refresh()
     pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
 
+    padhi = rows - 5 - Y - 4 + 1
+
     while key_meta != META and key_meta not in QUIT:
         if key_meta in SCROLL_UP and y > 0:
             y -= 1
-        elif key_meta in SCROLL_DOWN and y < len(src_lines) - hi + 4:
+        elif key_meta in SCROLL_DOWN and y < totlines - hi + 6:
             y += 1
+        elif key_meta in PAGE_UP:
+            y = pgup(y, padhi)
+        elif key_meta in PAGE_DOWN:
+            y = pgdn(y, totlines, padhi)
+        elif key_meta in CH_HOME:
+            y = 0
+        elif key_meta in CH_END:
+            y = pgend(totlines, padhi)
         elif key_meta == curses.KEY_RESIZE:
             return key_meta
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
@@ -404,8 +436,9 @@ def help(stdscr):
 
     src = re.search("Key Bind(\n|.)*", __doc__).group()
     src_lines = src.splitlines()
+    totlines = len(src_lines)
 
-    pad = curses.newpad(len(src_lines), wi - 2 )
+    pad = curses.newpad(totlines, wi - 2 )
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         pad.addstr(n, 0, i)
@@ -413,11 +446,21 @@ def help(stdscr):
     help.refresh()
     pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
 
+    padhi = rows - 5 - Y - 4 + 1
+
     while key_help not in HELP and key_help not in QUIT:
         if key_help in SCROLL_UP and y > 0:
             y -= 1
-        elif key_help in SCROLL_DOWN and y < len(src_lines) - hi + 6:
+        elif key_help in SCROLL_DOWN and y < totlines - hi + 6:
             y += 1
+        elif key_help in PAGE_UP:
+            y = pgup(y, padhi)
+        elif key_help in PAGE_DOWN:
+            y = pgdn(y, totlines, padhi)
+        elif key_help in CH_HOME:
+            y = 0
+        elif key_help in CH_END:
+            y = pgend(totlines, padhi)
         elif key_help == curses.KEY_RESIZE:
             return key_help
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
@@ -660,10 +703,7 @@ def reader(stdscr, ebook, index, width, y=0):
             if y > 0:
                 y -= 1
         elif k in PAGE_UP:
-            if y >= rows - LINEPRSRV:
-                y -= rows - LINEPRSRV
-            else:
-                y = 0
+            y = pgup(y, rows, LINEPRSRV)
         elif k in SCROLL_DOWN:
             if y < len(src_lines) - rows:
                 y += 1
@@ -678,10 +718,6 @@ def reader(stdscr, ebook, index, width, y=0):
                     pad.refresh(y,0, 0,x, len(src_lines)-y,x+width)
                 except curses.error:
                     pass
-            # else:
-            #     y = len(src_lines) - rows
-            #     if y < 0:
-            #         y = 0
         elif k in CH_NEXT and index < len(ebook.get_contents()) - 1:
             return 1, width, 0
         elif k in CH_PREV and index > 0:
@@ -689,9 +725,7 @@ def reader(stdscr, ebook, index, width, y=0):
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
-            y = len(src_lines) - rows
-            if y < 0:
-                y = 0
+            y = pgend(len(src_lines), rows)
         elif k == TOC:
             fllwd = toc(stdscr, ebook, index, width)
             if fllwd is not None:
