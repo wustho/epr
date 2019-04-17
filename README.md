@@ -55,12 +55,12 @@ e. g. when you read nonfiction reference epub (like manual or documentation) rat
 Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
-    epr STRINGS     read STRINGS (best match) from history
+    epr STRINGS     read matched STRINGS from history
 
 Options:
-    -r              show reading history
+    -r              print reading history
     -d              dump epub
-    -h, --help      show this help message
+    -h, --help      print short/long help
 
 Key binding:
     Help            : ?

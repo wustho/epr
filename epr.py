@@ -30,7 +30,7 @@ Key Binding:
     TOC             : t
     Metadata        : m
 
-v2.1.2
+v2.1.3
 MIT License
 Copyright (c) 2019 Benawi Adha
 https://github.com/wustho/epr
@@ -338,6 +338,12 @@ def toc(stdscr, ebook, index, width):
     if index in range(padhi//2, totlines - padhi//2):
         y = index - padhi//2 + 1
     d = len(str(totlines))
+    span = []
+
+    for n, i in enumerate(src):
+        strs = "  " + str(n+1).rjust(d) + " " + i[0]
+        pad.addstr(n, 0, strs)
+        span.append(len(strs) - 1)
 
     while key_toc != TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
@@ -368,12 +374,11 @@ def toc(stdscr, ebook, index, width):
             else:
                 y += 1
 
-        pad.clear()
-        for n, i in enumerate(src):
-            if index == n:
-                pad.addstr(n, 0, "> " + str(n+1).rjust(d) + " " + i[0], curses.A_REVERSE)
-            else:
-                pad.addstr(n, 0, "  " + str(n+1).rjust(d) + " " + i[0])
+        for n in range(totlines):
+            att = curses.A_REVERSE if index == n else curses.A_NORMAL
+            pre = "> " if index == n else "  "
+            pad.chgat(n, 2, span[n], att)
+            pad.addstr(n, 0, pre)
 
         pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
