@@ -30,7 +30,7 @@ Key Binding:
     TOC             : t
     Metadata        : m
 
-v2.1.3
+v2.1.4
 MIT License
 Copyright (c) 2019 Benawi Adha
 https://github.com/wustho/epr
@@ -198,7 +198,6 @@ class Epub:
         return namedcontents
 
 class HTMLtoLines(HTMLParser):
-    global para, inde, bull, hide
     para = {"p", "div"}
     inde = {"q", "dt", "dd", "blockquote", "pre"}
     bull = {"li"}
@@ -208,43 +207,30 @@ class HTMLtoLines(HTMLParser):
         HTMLParser.__init__(self)
         self.text = [""]
         self.imgs = []
-        self.inde = False
-        self.bull = False
-        self.hide = False
+        self.ishead = False
+        self.isinde = False
+        self.isbull = False
+        self.ishidden = False
+        self.idhead = set()
+        self.idinde = set()
+        self.idbull = set()
 
     def handle_starttag(self, tag, attrs):
         if re.match("h[1-6]", tag) is not None:
-            self.text[-1] += "[EPR:HEAD]"
-        elif tag in para:
-            if self.inde:
-                self.text[-1] += "[EPR:INDE]"
-            elif self.bull:
-                self.text[-1] += "[EPR:BULL]"
-        elif tag in inde:
-            self.text[-1] += "[EPR:INDE]"
-            self.inde = True
-        elif tag in bull:
-            self.text[-1] += "[EPR:BULL]"
-            self.bull = True
-        elif tag in hide:
-            self.hide = True
+            self.ishead = True
+        elif tag in self.inde:
+            self.isinde = True
+        elif tag in self.bull:
+            self.isbull = True
+        elif tag in self.hide:
+            self.ishidden = True
 
     def handle_startendtag(self, tag, attrs):
         if tag == "br":
             self.text += [""]
-            if self.inde:
-                self.text[-1] += "[EPR:INDE]"
-            elif self.bull:
-                self.text[-1] += "[EPR:BULL]"
-        elif tag == "img":
+        elif tag in {"img", "image"}:
             for i in attrs:
-                if i[0] == "src":
-                    self.text.append("[IMG:{}]".format(len(self.imgs)))
-                    self.imgs.append(unquote(i[1]))
-                    self.text.append("")
-        elif tag == "image":
-            for i in attrs:
-                if i[0] == "xlink:href":
+                if (tag == "img" and i[0] == "src") or (tag == "image" and i[0] == "xlink:href"):
                     self.text.append("[IMG:{}]".format(len(self.imgs)))
                     self.imgs.append(unquote(i[1]))
                     self.text.append("")
@@ -253,42 +239,46 @@ class HTMLtoLines(HTMLParser):
         if re.match("h[1-6]", tag) is not None:
             self.text.append("")
             self.text.append("")
-        elif tag in para:
+            self.ishead = False
+        elif tag in self.para:
             self.text.append("")
-        elif tag in hide:
-            self.hide = False
-        elif tag in inde:
+        elif tag in self.hide:
+            self.ishidden = False
+        elif tag in self.inde:
             if self.text[-1] != "":
                 self.text.append("")
-            self.inde = False
-        elif tag in bull:
+            self.isinde = False
+        elif tag in self.bull:
             if self.text[-1] != "":
                 self.text.append("")
-            self.bull = False
+            self.isbull = False
 
     def handle_data(self, raw):
-        if raw and not self.hide:
-            if self.text[-1] == "" or re.match(r"\[EPR:(INDE|BULL)\]", self.text[-1]) is not None:
+        if raw and not self.ishidden:
+            if self.text[-1] == "":
                 tmp = raw.lstrip()
             else:
                 tmp = raw
             line = unescape(re.sub(r"\s+", " ", tmp))
             self.text[-1] += line
+            if self.ishead:
+                self.idhead.add(len(self.text)-1)
+            elif self.isbull:
+                self.idbull.add(len(self.text)-1)
+            elif self.isinde:
+                self.idinde.add(len(self.text)-1)
 
     def get_lines(self, width=0):
         text = []
         if width == 0:
             return self.text
-        for i in self.text:
-            if re.match(r"\[EPR:HEAD\]", i) is not None:
-                tmp = i.replace("[EPR:HEAD]", "")
-                text += [tmp.rjust(width//2 + len(tmp)//2 - RIGHTPADDING)] + [""]
-            elif re.match(r"\[EPR:INDE\]", i) is not None:
-                tmp = i.replace("[EPR:INDE]", "")
-                text += ["   "+j for j in textwrap.fill(tmp, width - 3).splitlines()] + [""]
-            elif re.match(r"\[EPR:BULL\]", i) is not None:
-                tmp = i.replace("[EPR:BULL]", "")
-                tmp = textwrap.fill(tmp, width - 3).splitlines()
+        for n, i in enumerate(self.text):
+            if n in self.idhead:
+                text += [i.rjust(width//2 + len(i)//2 - RIGHTPADDING)] + [""]
+            elif n in self.idinde:
+                text += ["   "+j for j in textwrap.fill(i, width - 3).splitlines()] + [""]
+            elif n in self.idbull:
+                tmp = textwrap.fill(i, width - 3).splitlines()
                 text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
             else:
                 text += textwrap.fill(i, width).splitlines() + [""]
@@ -341,9 +331,10 @@ def toc(stdscr, ebook, index, width):
     span = []
 
     for n, i in enumerate(src):
-        strs = "  " + str(n+1).rjust(d) + " " + i[0]
+        # strs = "  " + str(n+1).rjust(d) + " " + i[0]
+        strs = "  " + i[0]
         pad.addstr(n, 0, strs)
-        span.append(len(strs) - 1)
+        span.append(len(strs))
 
     while key_toc != TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
@@ -377,8 +368,8 @@ def toc(stdscr, ebook, index, width):
         for n in range(totlines):
             att = curses.A_REVERSE if index == n else curses.A_NORMAL
             pre = "> " if index == n else "  "
-            pad.chgat(n, 2, span[n], att)
             pad.addstr(n, 0, pre)
+            pad.chgat(n, 1, span[n], att)
 
         pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
@@ -928,8 +919,7 @@ if __name__ == "__main__":
             src_lines = parser.get_lines()
             # sys.stdout.reconfigure(encoding="utf-8")  # Python>=3.7
             for j in src_lines:
-                toprint = re.sub("\[EPR:[A-Z]{4}\]", "", j)
-                sys.stdout.buffer.write((toprint+"\n\n").encode("utf-8"))
+                sys.stdout.buffer.write((j+"\n\n").encode("utf-8"))
         sys.exit()
 
     else:
