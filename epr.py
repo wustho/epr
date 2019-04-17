@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 """\
-epr v2.1.2-md
-CLI Epub Reader
-
 Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
@@ -33,6 +30,7 @@ Key Binding:
     TOC             : t
     Metadata        : m
 
+v2.1.3-md
 MIT License
 Copyright (c) 2019 Benawi Adha
 https://github.com/wustho/epr
@@ -184,7 +182,7 @@ class Epub:
             navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
         elif self.version == "3.0":
             navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
-        for n, i in enumerate(contents):
+        for i in contents:
             name = "unknown"
             for j in navPoints:
                 # EPUB3
@@ -199,11 +197,32 @@ class Epub:
                         break
 
             namedcontents.append([
-                str(n+1)+". "+name,
+                name,
                 self.rootdir + i
             ])
 
         return namedcontents
+
+def pgup(pos, winhi, preservedline=0):
+    if pos >= winhi - preservedline:
+        return pos - winhi + preservedline
+    else:
+        return 0
+
+def pgdn(pos, tot, winhi, preservedline=0):
+    if pos + winhi <= tot - winhi:
+        return pos + winhi
+    else:
+        pos = tot - winhi
+        if pos < 0:
+            return 0
+        return pos
+
+def pgend(tot, winhi):
+    if tot - winhi >= 0:
+        return tot - winhi
+    else:
+        return 0
 
 def toc(stdscr, ebook, index, width):
     rows, cols = stdscr.getmaxyx()
@@ -217,45 +236,60 @@ def toc(stdscr, ebook, index, width):
     toc.addstr(2,2, "-----------------")
     key_toc = 0
 
-    def pad(src, id, top=0):
-        pad = curses.newpad(len(src), wi - 2 )
-        pad.keypad(True)
-        pad.clear()
-        for i in range(len(src)):
-            if i == id:
-                pad.addstr(i, 0, "> " + src[i][0], curses.A_REVERSE)
-            else:
-                pad.addstr(i, 0, " " + src[i][0])
-        # scrolling up
-        if top == id and top > 0:
-            top = top - 1
-        # steady
-        elif id - top <= rows - Y -9:
-            top = top
-        # scrolling down
-        else:
-            top = id - rows + Y + 9
-
-        pad.refresh(top,0, Y+4,X+4, rows - 5, cols - 6)
-        return top
-
     src = ebook.get_contents()
+    totlines = len(src)
     toc.refresh()
-    top = pad(src, index)
+    pad = curses.newpad(totlines, wi - 2 )
+    pad.keypad(True)
+
+    padhi = rows - 5 - Y - 4 + 1
+    y = 0
+    if index in range(padhi//2, totlines - padhi//2):
+        y = index - padhi//2 + 1
+    d = len(str(totlines))
+    span = []
+
+    for n, i in enumerate(src):
+        strs = "  " + str(n+1).rjust(d) + " " + i[0]
+        pad.addstr(n, 0, strs)
+        span.append(len(strs) - 1)
 
     while key_toc != TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
             index -= 1
-            top = pad(src, index, top)
-        elif key_toc in SCROLL_DOWN and index + 1 < len(src):
+        elif key_toc in SCROLL_DOWN and index + 1 < totlines:
             index += 1
-            top = pad(src, index, top)
         elif key_toc in FOLLOW:
             if index == oldindex:
                 break
             return index
+        elif key_toc in PAGE_UP:
+            index = pgup(index, padhi)
+        elif key_toc in PAGE_DOWN:
+            if index >= totlines - padhi:
+                index = totlines - 1
+            else:
+                index = pgdn(index, totlines, padhi)
+        elif key_toc in CH_HOME:
+            index = 0
+        elif key_toc in CH_END:
+            index = totlines - 1
         elif key_toc == curses.KEY_RESIZE:
             return key_toc
+
+        while index not in range(y, y+padhi):
+            if index < y:
+                y -= 1
+            else:
+                y += 1
+
+        for n in range(totlines):
+            att = curses.A_REVERSE if index == n else curses.A_NORMAL
+            pre = "> " if index == n else "  "
+            pad.chgat(n, 2, span[n], att)
+            pad.addstr(n, 0, pre)
+
+        pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
 
     toc.clear()
@@ -279,20 +313,31 @@ def meta(stdscr, ebook):
         data = re.sub("\t", "", data)
         mdata += textwrap.fill(i[0] + " : " + data, wi - 6).splitlines()
     src_lines = mdata
+    totlines = len(src_lines)
 
-    pad = curses.newpad(len(src_lines), wi - 2 )
+    pad = curses.newpad(totlines, wi - 2 )
     pad.keypad(True)
-    for i in range(len(src_lines)):
-        pad.addstr(i, 0, src_lines[i])
+    for n, i in enumerate(src_lines):
+        pad.addstr(n, 0, i)
     y = 0
     meta.refresh()
     pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
 
+    padhi = rows - 5 - Y - 4 + 1
+
     while key_meta != META and key_meta not in QUIT:
         if key_meta in SCROLL_UP and y > 0:
             y -= 1
-        elif key_meta in SCROLL_DOWN and y < len(src_lines) - hi + 4:
+        elif key_meta in SCROLL_DOWN and y < totlines - hi + 6:
             y += 1
+        elif key_meta in PAGE_UP:
+            y = pgup(y, padhi)
+        elif key_meta in PAGE_DOWN:
+            y = pgdn(y, totlines, padhi)
+        elif key_meta in CH_HOME:
+            y = 0
+        elif key_meta in CH_END:
+            y = pgend(totlines, padhi)
         elif key_meta == curses.KEY_RESIZE:
             return key_meta
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
@@ -315,8 +360,9 @@ def help(stdscr):
 
     src = re.search("Key Bind(\n|.)*", __doc__).group()
     src_lines = src.splitlines()
+    totlines = len(src_lines)
 
-    pad = curses.newpad(len(src_lines), wi - 2 )
+    pad = curses.newpad(totlines, wi - 2 )
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         pad.addstr(n, 0, i)
@@ -324,11 +370,21 @@ def help(stdscr):
     help.refresh()
     pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
 
+    padhi = rows - 5 - Y - 4 + 1
+
     while key_help not in HELP and key_help not in QUIT:
         if key_help in SCROLL_UP and y > 0:
             y -= 1
-        elif key_help in SCROLL_DOWN and y < len(src_lines) - hi + 6:
+        elif key_help in SCROLL_DOWN and y < totlines - hi + 6:
             y += 1
+        elif key_help in PAGE_UP:
+            y = pgup(y, padhi)
+        elif key_help in PAGE_DOWN:
+            y = pgdn(y, totlines, padhi)
+        elif key_help in CH_HOME:
+            y = 0
+        elif key_help in CH_END:
+            y = pgend(totlines, padhi)
         elif key_help == curses.KEY_RESIZE:
             return key_help
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
@@ -578,10 +634,7 @@ def reader(stdscr, ebook, index, width, y=0):
             if y > 0:
                 y -= 1
         elif k in PAGE_UP:
-            if y >= rows - LINEPRSRV:
-                y -= rows - LINEPRSRV
-            else:
-                y = 0
+            y = pgup(y, rows, LINEPRSRV)
         elif k in SCROLL_DOWN:
             if y < len(src_lines) - rows:
                 y += 1
@@ -596,10 +649,6 @@ def reader(stdscr, ebook, index, width, y=0):
                     pad.refresh(y,0, 0,x, len(src_lines)-y,x+width)
                 except curses.error:
                     pass
-            # else:
-            #     y = len(src_lines) - rows
-            #     if y < 0:
-            #         y = 0
         elif k in CH_NEXT and index < len(ebook.get_contents()) - 1:
             return 1, width, 0
         elif k in CH_PREV and index > 0:
@@ -607,9 +656,7 @@ def reader(stdscr, ebook, index, width, y=0):
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
-            y = len(src_lines) - rows
-            if y < 0:
-                y = 0
+            y = pgend(len(src_lines), rows)
         elif k == TOC:
             fllwd = toc(stdscr, ebook, index, width)
             if fllwd is not None:
@@ -686,6 +733,8 @@ def reader(stdscr, ebook, index, width, y=0):
             return 0, width, 0
 
         try:
+            stdscr.clear()
+            stdscr.refresh()
             pad.refresh(y,0, 0,x, rows-1,x+width)
         except curses.error:
             pass

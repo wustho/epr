@@ -1,10 +1,10 @@
-# `$ epr.py`
+# `$ epr`
 
 ![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
 CLI Epub reader written in Python 3.7 with features:
 
-- Remembers last read file (just run `epr.py` without any argument)
+- Remembers last read file (just run `epr` without any argument)
 - Remembers last reading state for each file (per file saved state written to `$HOME/.config/epr/config` or `$HOME/.epr` respectively depending on availability)
 - Adjustable text area width
 - Supports EPUB3 (no audio support)
@@ -22,33 +22,33 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - Supports regex search only
 - Some known issues mentioned at the bottom
 
+## Dependencies
+
+- `html2text`
+- `curses` (Linux) or `windows-curses` (Windows)
+
 ## Quickly Read from History
 
-Rather than invoking `epr.py /path/to/file` each time you are going to read, you might find it easier to do just `epr.py STRINGS.`
+Rather than invoking `epr /path/to/file` each time you are going to read, you might find it easier to do just `epr STRINGS.`
 
 Example:
 
 ``` shell
-$ epr.py dumas count mont
+$ epr dumas count mont
 ```
 
-If `STRINGS` is not any file, `epr.py` will choose from reading history, best matched `path/to/file` with those `STRINGS.` So, the more `STRINGS` given the more accurate it will find.
+If `STRINGS` is not any file, `epr` will choose from reading history, best matched `path/to/file` with those `STRINGS.` So, the more `STRINGS` given the more accurate it will find.
 
-Run `epr.py -r` to show list of all reading history.
+Run `epr -r` to show list of all reading history.
 
 ## Opening an Image
 
-Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it (`q` to cancel).
+Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it and `q` to cancel.
 
 ## Vanilla or Markdown?
 
-If you'd like to read epub in markdown format, checkout `v2.0.1-md` (which _requires_ module `html2text`) from release page.
-e. g. when you read nonfiction reference epub (like manual or documentation) rather than fiction one.
-
-## Dependencies
-
-- `html2text`
-- `curses`
+If you'd like to read epub in markdown format, checkout `vX.X.X-md` (which _requires_ module `html2text`) from release page.
+Useful when you read more nonfiction reference epub (like manual or documentation) than fiction one.
 
 ## Usages
 
@@ -56,12 +56,12 @@ e. g. when you read nonfiction reference epub (like manual or documentation) rat
 Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
-    epr STRINGS     read STRINGS (best match) from history
+    epr STRINGS     read matched STRINGS from history
 
 Options:
-    -r              show reading history
+    -r              print reading history
     -d              dump epub
-    -h, --help      show this help message
+    -h, --help      print short/long help
 
 Key binding:
     Help            : ?
@@ -98,14 +98,14 @@ Key binding:
 
   ```shell
   # to get 1 paragraph before and after a paragraph containing "Overdue"
-  $ epr.py -d the_girl_next_door.epub | grep Overdue -C 2
+  $ epr -d the_girl_next_door.epub | grep Overdue -C 2
   ```
 
 - "unknown" chapters in TOC
 
   This happens because not every chapter file (inside some epubs) is given navigation points.
   Some epubs even won't let you navigate between chapter, thus you'll find all chapters named as
-  "unknown" using `epr.py` for these kind of epubs.
+  "unknown" using `epr` for these kind of epubs.
 
 - Skipped chapters in TOC
 
