@@ -176,7 +176,7 @@ class Epub:
             navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
         elif self.version == "3.0":
             navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
-        for n, i in enumerate(contents):
+        for i in contents:
             name = "unknown"
             for j in navPoints:
                 # EPUB3
@@ -191,7 +191,7 @@ class Epub:
                         break
 
             namedcontents.append([
-                str(n+1)+". "+name,
+                name,
                 self.rootdir + i
             ])
 
@@ -327,45 +327,41 @@ def toc(stdscr, ebook, index, width):
     toc.addstr(2,2, "-----------------")
     key_toc = 0
 
-    def pad(src, id, top=0):
-        pad = curses.newpad(len(src), wi - 2 )
-        pad.keypad(True)
-        pad.clear()
-        for i in range(len(src)):
-            if i == id:
-                pad.addstr(i, 0, "> " + src[i][0], curses.A_REVERSE)
-            else:
-                pad.addstr(i, 0, " " + src[i][0])
-        # scrolling up
-        if top == id and top > 0:
-            top = top - 1
-        # steady
-        elif id - top <= rows - Y -9:
-            top = top
-        # scrolling down
-        else:
-            top = id - rows + Y + 9
-
-        pad.refresh(top,0, Y+4,X+4, rows - 5, cols - 6)
-        return top
-
     src = ebook.get_contents()
     toc.refresh()
-    top = pad(src, index)
+    pad = curses.newpad(len(src), wi - 2 )
+    pad.keypad(True)
+
+    padhi = rows - 5 - Y - 4 + 1
+    y = 0
+    d = len(str(len(src)))
 
     while key_toc != TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
             index -= 1
-            top = pad(src, index, top)
         elif key_toc in SCROLL_DOWN and index + 1 < len(src):
             index += 1
-            top = pad(src, index, top)
         elif key_toc in FOLLOW:
             if index == oldindex:
                 break
             return index
         elif key_toc == curses.KEY_RESIZE:
             return key_toc
+
+        while index not in range(y, y+padhi):
+            if index < y:
+                y -= 1
+            else:
+                y += 1
+
+        pad.clear()
+        for n, i in enumerate(src):
+            if index == n:
+                pad.addstr(n, 0, (d*">").rjust(d) + " " + i[0], curses.A_REVERSE)
+            else:
+                pad.addstr(n, 0, str(n+1).rjust(d) + " " + i[0])
+
+        pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
 
     toc.clear()
