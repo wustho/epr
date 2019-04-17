@@ -328,23 +328,37 @@ def toc(stdscr, ebook, index, width):
     key_toc = 0
 
     src = ebook.get_contents()
+    totlines = len(src)
     toc.refresh()
-    pad = curses.newpad(len(src), wi - 2 )
+    pad = curses.newpad(totlines, wi - 2 )
     pad.keypad(True)
 
     padhi = rows - 5 - Y - 4 + 1
     y = 0
-    d = len(str(len(src)))
+    if index in range(padhi//2, totlines - padhi//2):
+        y = index - padhi//2 + 1
+    d = len(str(totlines))
 
     while key_toc != TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
             index -= 1
-        elif key_toc in SCROLL_DOWN and index + 1 < len(src):
+        elif key_toc in SCROLL_DOWN and index + 1 < totlines:
             index += 1
         elif key_toc in FOLLOW:
             if index == oldindex:
                 break
             return index
+        elif key_toc in PAGE_UP:
+            index = pgup(index, padhi)
+        elif key_toc in PAGE_DOWN:
+            if index >= totlines - padhi:
+                index = totlines - 1
+            else:
+                index = pgdn(index, totlines, padhi)
+        elif key_toc in CH_HOME:
+            index = 0
+        elif key_toc in CH_END:
+            index = totlines - 1
         elif key_toc == curses.KEY_RESIZE:
             return key_toc
 
@@ -357,9 +371,9 @@ def toc(stdscr, ebook, index, width):
         pad.clear()
         for n, i in enumerate(src):
             if index == n:
-                pad.addstr(n, 0, (d*">").rjust(d) + " " + i[0], curses.A_REVERSE)
+                pad.addstr(n, 0, "> " + str(n+1).rjust(d) + " " + i[0], curses.A_REVERSE)
             else:
-                pad.addstr(n, 0, str(n+1).rjust(d) + " " + i[0])
+                pad.addstr(n, 0, "  " + str(n+1).rjust(d) + " " + i[0])
 
         pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
