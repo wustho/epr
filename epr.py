@@ -188,7 +188,8 @@ class Epub:
                         name = j.find("DAISY:navLabel/DAISY:text", NS).text
                         break
                 elif self.version == "3.0":
-                    if i == unquote(j.get("href")):
+                    # if i == unquote(j.get("href")):
+                    if re.search(i, unquote(j.get("href"))) is not None:
                         name = "".join(list(j.itertext()))
                         break
             self.toc_entries.append(name)

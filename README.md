@@ -20,6 +20,7 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
 - Supports regex search only
+- Doesn't support hyperlinks
 - Some known issues mentioned at the bottom
 
 ## Dependencies
