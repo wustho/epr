@@ -20,6 +20,7 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 - Saved state (reading position & width, but not reading chapter) will reset
   if current terminal size is incompatible with latest reading state
 - Supports regex search only
+- Doesn't support hyperlinks
 - Some known issues mentioned at the bottom
 
 ## Dependencies
@@ -101,7 +102,7 @@ Key binding:
   $ epr -d the_girl_next_door.epub | grep Overdue -C 2
   ```
 
-- "unknown" chapters in TOC
+- "-" chapters in TOC
 
   This happens because not every chapter file (inside some epubs) is given navigation points.
   Some epubs even won't let you navigate between chapter, thus you'll find all chapters named as

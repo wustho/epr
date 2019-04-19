@@ -30,7 +30,7 @@ Key Binding:
     TOC             : t
     Metadata        : m
 
-v2.1.3-md
+v2.1.5-md
 MIT License
 Copyright (c) 2019 Benawi Adha
 https://github.com/wustho/epr
@@ -140,6 +140,9 @@ class Epub:
         elif self.version == "3.0":
             self.toc = self.rootdir + cont.find("OPF:manifest/*[@properties='nav']", NS).get("href")
 
+        self.contents = []
+        self.toc_entries = []
+
     def get_meta(self):
         meta = []
         # why self.file.read(self.rootfile) problematic
@@ -149,8 +152,7 @@ class Epub:
                 meta.append([re.sub("{.*?}", "", i.tag), i.text])
         return meta
 
-    def get_contents(self):
-        contents = []
+    def initialize(self):
         cont = ET.parse(self.file.open(self.rootfile)).getroot()
         manifest = []
         for i in cont.findall("OPF:manifest/*", NS):
@@ -164,18 +166,18 @@ class Epub:
             else:
                 toc = self.rootdir + unquote(i.get("href"))
 
-        spine = []
+        spine, contents = [], []
         for i in cont.findall("OPF:spine/*", NS):
             spine.append(i.get("idref"))
         for i in spine:
             for j in manifest:
                 if i == j[0]:
+                    self.contents.append(self.rootdir+unquote(j[1]))
                     contents.append(unquote(j[1]))
                     manifest.remove(j)
                     # TODO: test is break necessary
                     break
 
-        namedcontents = []
         toc = ET.parse(self.file.open(toc)).getroot()
         # EPUB3
         if self.version == "2.0":
@@ -183,7 +185,7 @@ class Epub:
         elif self.version == "3.0":
             navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
         for i in contents:
-            name = "unknown"
+            name = "-"
             for j in navPoints:
                 # EPUB3
                 if self.version == "2.0":
@@ -192,16 +194,11 @@ class Epub:
                         name = j.find("DAISY:navLabel/DAISY:text", NS).text
                         break
                 elif self.version == "3.0":
-                    if i == unquote(j.get("href")):
+                    # if i == unquote(j.get("href")):
+                    if re.search(i, unquote(j.get("href"))) is not None:
                         name = "".join(list(j.itertext()))
                         break
-
-            namedcontents.append([
-                name,
-                self.rootdir + i
-            ])
-
-        return namedcontents
+            self.toc_entries.append(name)
 
 def pgup(pos, winhi, preservedline=0):
     if pos >= winhi - preservedline:
@@ -224,7 +221,7 @@ def pgend(tot, winhi):
     else:
         return 0
 
-def toc(stdscr, ebook, index, width):
+def toc(stdscr, src, index, width):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
     Y, X = 2, 2
@@ -236,7 +233,6 @@ def toc(stdscr, ebook, index, width):
     toc.addstr(2,2, "-----------------")
     key_toc = 0
 
-    src = ebook.get_contents()
     totlines = len(src)
     toc.refresh()
     pad = curses.newpad(totlines, wi - 2 )
@@ -250,9 +246,11 @@ def toc(stdscr, ebook, index, width):
     span = []
 
     for n, i in enumerate(src):
-        strs = "  " + str(n+1).rjust(d) + " " + i[0]
+        # strs = "  " + str(n+1).rjust(d) + " " + i[0]
+        strs = "  " + i
+        strs = strs[0:wi-3]
         pad.addstr(n, 0, strs)
-        span.append(len(strs) - 1)
+        span.append(len(strs))
 
     while key_toc != TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
@@ -264,12 +262,13 @@ def toc(stdscr, ebook, index, width):
                 break
             return index
         elif key_toc in PAGE_UP:
-            index = pgup(index, padhi)
+            index -= 3
+            if index < 0:
+                index = 0
         elif key_toc in PAGE_DOWN:
-            if index >= totlines - padhi:
+            index += 3
+            if index >= totlines:
                 index = totlines - 1
-            else:
-                index = pgdn(index, totlines, padhi)
         elif key_toc in CH_HOME:
             index = 0
         elif key_toc in CH_END:
@@ -286,8 +285,8 @@ def toc(stdscr, ebook, index, width):
         for n in range(totlines):
             att = curses.A_REVERSE if index == n else curses.A_NORMAL
             pre = "> " if index == n else "  "
-            pad.chgat(n, 2, span[n], att)
             pad.addstr(n, 0, pre)
+            pad.chgat(n, 1, span[n], att)
 
         pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
@@ -582,8 +581,9 @@ def reader(stdscr, ebook, index, width, y=0):
     stdscr.clear()
     stdscr.refresh()
 
-    chpath = ebook.get_contents()[index][1]
-
+    contents = ebook.contents
+    toc_src = ebook.toc_entries
+    chpath = contents[index]
     content = ebook.file.open(chpath).read()
 
     # parser.body_width, imgs = width, []
@@ -612,7 +612,7 @@ def reader(stdscr, ebook, index, width, y=0):
             pad.addstr(i, 0, src_lines[i])
     if index == 0:
         suff = "     End --> "
-    elif index == len(ebook.get_contents()) - 1:
+    elif index == len(ebook.contents) - 1:
         suff = " <-- End     "
     else:
         suff = " <-- End --> "
@@ -649,7 +649,7 @@ def reader(stdscr, ebook, index, width, y=0):
                     pad.refresh(y,0, 0,x, len(src_lines)-y,x+width)
                 except curses.error:
                     pass
-        elif k in CH_NEXT and index < len(ebook.get_contents()) - 1:
+        elif k in CH_NEXT and index < len(contents) - 1:
             return 1, width, 0
         elif k in CH_PREV and index > 0:
             return -1, width, 0
@@ -658,7 +658,7 @@ def reader(stdscr, ebook, index, width, y=0):
         elif k in CH_END:
             y = pgend(len(src_lines), rows)
         elif k == TOC:
-            fllwd = toc(stdscr, ebook, index, width)
+            fllwd = toc(stdscr, toc_src, index, width)
             if fllwd is not None:
                 if fllwd == curses.KEY_RESIZE:
                     k = fllwd
@@ -679,7 +679,7 @@ def reader(stdscr, ebook, index, width, y=0):
             width -= 2
             return 0, width, 0
         elif k == ord("/"):
-            fs = searching(stdscr, pad, src_lines, width, y, index, len(ebook.get_contents()))
+            fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
             if fs == curses.KEY_RESIZE:
                 k = fs
                 continue
@@ -763,6 +763,8 @@ def main(stdscr, file):
         width = cols - 2
         y = 0
 
+    epub.initialize()
+
     while True:
         incr, width, y = reader(stdscr, epub, idx, width, y)
         idx += incr
@@ -832,11 +834,12 @@ if __name__ == "__main__":
 
     if dump:
         epub = Epub(file)
-        for i in epub.get_contents():
+        epub.initialize()
+        for i in epub.contents:
             parser.body_width = False
             parser.single_line_break = True
             imgs = []
-            content = epub.file.open(i[1]).read()
+            content = epub.file.open(i).read()
             src = parser.handle(content.decode("utf-8"))
             for j in src.splitlines():
                 sys.stdout.buffer.write((j+"\n\n").encode("utf-8"))
