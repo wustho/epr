@@ -179,7 +179,7 @@ class Epub:
         elif self.version == "3.0":
             navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
         for i in contents:
-            name = "unknown"
+            name = "-"
             for j in navPoints:
                 # EPUB3
                 if self.version == "2.0":
@@ -328,6 +328,7 @@ def toc(stdscr, src, index, width):
     for n, i in enumerate(src):
         # strs = "  " + str(n+1).rjust(d) + " " + i[0]
         strs = "  " + i
+        strs = strs[0:wi-3]
         pad.addstr(n, 0, strs)
         span.append(len(strs))
 
