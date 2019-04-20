@@ -27,10 +27,10 @@ Key Binding:
     Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
-    TOC             : t
+    ToC             : TAB       t
     Metadata        : m
 
-v2.1.5-md
+v2.2.6-md
 MIT License
 Copyright (c) 2019 Benawi Adha
 https://github.com/wustho/epr
@@ -84,7 +84,7 @@ CH_END = {curses.KEY_END, ord("G")}
 SHRINK = ord("-")
 WIDEN = ord("=")
 META = ord("m")
-TOC = ord("t")
+TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
 QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
@@ -200,6 +200,17 @@ class Epub:
                         break
             self.toc_entries.append(name)
 
+def savestate(file, index, width, pos, pctg ):
+    for i in state:
+        state[i]["lastread"] = str(0)
+    state[file]["lastread"] = str(1)
+    state[file]["index"] = str(index)
+    state[file]["width"] = str(width)
+    state[file]["pos"] = str(pos)
+    state[file]["pctg"] = str(pctg)
+    with open(statefile, "w") as f:
+        json.dump(state, f, indent=4)
+
 def pgup(pos, winhi, preservedline=0):
     if pos >= winhi - preservedline:
         return pos - winhi + preservedline
@@ -252,7 +263,7 @@ def toc(stdscr, src, index, width):
         pad.addstr(n, 0, strs)
         span.append(len(strs))
 
-    while key_toc != TOC and key_toc not in QUIT:
+    while key_toc not in TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
             index -= 1
         elif key_toc in SCROLL_DOWN and index + 1 < totlines:
@@ -574,7 +585,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         pad.refresh(y,0, 0,x, rows-2,x+width)
         s = pad.getch()
 
-def reader(stdscr, ebook, index, width, y=0):
+def reader(stdscr, ebook, index, width, y, pctg):
     k = 0 if SEARCHPATTERN is None else ord("/")
     rows, cols = stdscr.getmaxyx()
     x = (cols - width) // 2
@@ -603,6 +614,16 @@ def reader(stdscr, ebook, index, width, y=0):
             j = re.sub("!\[.*?\]\(.*\)", "[IMG:{}]".format(len(imgs)-1), i)
         src_lines += textwrap.fill(j.strip(), width).splitlines() + [""]
 
+    totlines = len(src_lines)
+
+    if y < 0 and totlines <= rows:
+        y = 0
+    else:
+        if pctg is not None:
+            y = round(pctg*totlines)
+        else:
+            y = y % totlines
+
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
     for i in range(len(src_lines)):
@@ -621,49 +642,43 @@ def reader(stdscr, ebook, index, width, y=0):
 
     while True:
         if k in QUIT:
-            for i in state:
-                state[i]["lastread"] = str(0)
-            state[ebook.path]["lastread"] = str(1)
-            state[ebook.path]["index"] = str(index)
-            state[ebook.path]["width"] = str(width)
-            state[ebook.path]["pos"] = str(y)
-            with open(statefile, "w") as f:
-                json.dump(state, f, indent=4)
+            savestate(ebook.path, index, width, y, y/totlines)
             sys.exit()
         elif k in SCROLL_UP:
             if y > 0:
                 y -= 1
+            elif index != 0:
+                return -1, width, -rows, None
         elif k in PAGE_UP:
-            y = pgup(y, rows, LINEPRSRV)
+            if y == 0 and index != 0:
+                return -1, width, -rows, None
+            else:
+                y = pgup(y, rows, LINEPRSRV)
         elif k in SCROLL_DOWN:
-            if y < len(src_lines) - rows:
+            if y < totlines - rows:
                 y += 1
+            elif index != len(contents)-1:
+                return 1, width, 0, None
         elif k in PAGE_DOWN:
-            if y + rows - LINEPRSRV <= len(src_lines) - rows:
+            if totlines - y - LINEPRSRV > rows:
                 y += rows - LINEPRSRV
-            elif len(src_lines) - y + LINEPRSRV > rows:
-                y += rows - LINEPRSRV
-                try:
-                    stdscr.clear()
-                    stdscr.refresh()
-                    pad.refresh(y,0, 0,x, len(src_lines)-y,x+width)
-                except curses.error:
-                    pass
+            elif index != len(contents)-1:
+                return 1, width, 0, None
         elif k in CH_NEXT and index < len(contents) - 1:
-            return 1, width, 0
+            return 1, width, 0, None
         elif k in CH_PREV and index > 0:
-            return -1, width, 0
+            return -1, width, 0, None
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
-            y = pgend(len(src_lines), rows)
-        elif k == TOC:
+            y = pgend(totlines, rows)
+        elif k in TOC:
             fllwd = toc(stdscr, toc_src, index, width)
             if fllwd is not None:
                 if fllwd == curses.KEY_RESIZE:
                     k = fllwd
                     continue
-                return fllwd - index, width, 0
+                return fllwd - index, width, 0, None
         elif k == META:
             k = meta(stdscr, ebook)
             if k == curses.KEY_RESIZE:
@@ -674,17 +689,17 @@ def reader(stdscr, ebook, index, width, y=0):
                 continue
         elif k == WIDEN and (width + 2) < cols:
             width += 2
-            return 0, width, 0
+            return 0, width, 0, y/totlines
         elif k == SHRINK and width >= 22:
             width -= 2
-            return 0, width, 0
+            return 0, width, 0, y/totlines
         elif k == ord("/"):
             fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
             if fs == curses.KEY_RESIZE:
                 k = fs
                 continue
             elif SEARCHPATTERN is not None:
-                return fs, width, 0
+                return fs, width, 0, None
             else:
                 y = fs
         elif k == ord("o") and VWR is not None:
@@ -720,6 +735,7 @@ def reader(stdscr, ebook, index, width, y=0):
                 k = open_media(pad, ebook, imgsrc)
                 continue
         elif k == curses.KEY_RESIZE:
+            savestate(ebook.path, index, width, y, y/totlines)
             # stated in pypi windows-curses page:
             # to call resize_term right after KEY_RESIZE
             if sys.platform == "win32":
@@ -729,13 +745,17 @@ def reader(stdscr, ebook, index, width, y=0):
                 rows, cols = stdscr.getmaxyx()
                 curses.resize_term(rows, cols)
             if cols <= width:
-                width = cols - 2
-            return 0, width, 0
+                return 0, cols - 2, 0, y/totlines
+            else:
+                return 0, width, y, None
 
         try:
             stdscr.clear()
             stdscr.refresh()
-            pad.refresh(y,0, 0,x, rows-1,x+width)
+            if totlines - y < rows:
+                pad.refresh(y,0, 0,x, totlines-y,x+width)
+            else:
+                pad.refresh(y,0, 0,x, rows-1,x+width)
         except curses.error:
             pass
         k = pad.getch()
@@ -745,28 +765,34 @@ def main(stdscr, file):
     stdscr.keypad(True)
     curses.curs_set(0)
     stdscr.clear()
-    stdscr.refresh()
     rows, cols = stdscr.getmaxyx()
+    stdscr.addstr(rows-1,0, "Loading...")
+    stdscr.refresh()
+
     epub = Epub(file)
 
     if epub.path in state:
         idx = int(state[epub.path]["index"])
         width = int(state[epub.path]["width"])
         y = int(state[epub.path]["pos"])
+        pctg = None
     else:
         state[epub.path] = {}
         idx = 0
         y = 0
         width = 80
+        pctg = None
 
     if cols <= width:
         width = cols - 2
         y = 0
+        if "pctg" in state[epub.path]:
+            pctg = float(state[epub.path]["pctg"])
 
     epub.initialize()
 
     while True:
-        incr, width, y = reader(stdscr, epub, idx, width, y)
+        incr, width, y, pctg = reader(stdscr, epub, idx, width, y, pctg)
         idx += incr
 
 if __name__ == "__main__":
@@ -819,7 +845,7 @@ if __name__ == "__main__":
         for i in todel:
             del state[i]
         with open(statefile, "w") as f:
-                json.dump(state, f, indent=4)
+            json.dump(state, f, indent=4)
         if val != 0 and len({"-r"} & set(args)) == 0:
             file = cand
         else:
