@@ -27,7 +27,7 @@ Key Binding:
     Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
-    TOC             : t
+    ToC             : TAB       t
     Metadata        : m
 
 v2.1.5
@@ -85,7 +85,7 @@ CH_END = {curses.KEY_END, ord("G")}
 SHRINK = ord("-")
 WIDEN = ord("=")
 META = ord("m")
-TOC = ord("t")
+TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
 QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
@@ -333,7 +333,7 @@ def toc(stdscr, src, index, width):
         pad.addstr(n, 0, strs)
         span.append(len(strs))
 
-    while key_toc != TOC and key_toc not in QUIT:
+    while key_toc not in TOC and key_toc not in QUIT:
         if key_toc in SCROLL_UP and index > 0:
             index -= 1
         elif key_toc in SCROLL_DOWN and index + 1 < totlines:
@@ -676,8 +676,14 @@ def reader(stdscr, ebook, index, width, y=0):
         pass
 
     src_lines, imgs = parser.get_lines(width)
+    totlines = len(src_lines)
 
-    pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
+    if y < 0 and totlines <= rows:
+        y = 0
+    else:
+        y = y % totlines
+
+    pad = curses.newpad(totlines, width + 2) # + 2 unnecessary
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         if re.search("\[IMG:[0-9]+\]", i):
@@ -707,22 +713,23 @@ def reader(stdscr, ebook, index, width, y=0):
         elif k in SCROLL_UP:
             if y > 0:
                 y -= 1
+            elif index != 0:
+                return -1, width, -rows
         elif k in PAGE_UP:
-            y = pgup(y, rows, LINEPRSRV)
+            if y == 0 and index != 0:
+                return -1, width, -rows
+            else:
+                y = pgup(y, rows, LINEPRSRV)
         elif k in SCROLL_DOWN:
-            if y < len(src_lines) - rows:
+            if y < totlines - rows:
                 y += 1
+            elif index != len(contents)-1:
+                return 1, width, 0
         elif k in PAGE_DOWN:
-            if y + rows - LINEPRSRV <= len(src_lines) - rows:
+            if totlines - y - LINEPRSRV > rows:
                 y += rows - LINEPRSRV
-            elif len(src_lines) - y + LINEPRSRV > rows:
-                y += rows - LINEPRSRV
-                try:
-                    stdscr.clear()
-                    stdscr.refresh()
-                    pad.refresh(y,0, 0,x, len(src_lines)-y,x+width)
-                except curses.error:
-                    pass
+            elif index != len(contents)-1:
+                return 1, width, 0
         elif k in CH_NEXT and index < len(contents) - 1:
             return 1, width, 0
         elif k in CH_PREV and index > 0:
@@ -730,8 +737,8 @@ def reader(stdscr, ebook, index, width, y=0):
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
-            y = pgend(len(src_lines), rows)
-        elif k == TOC:
+            y = pgend(totlines, rows)
+        elif k in TOC:
             fllwd = toc(stdscr, toc_src, index, width)
             if fllwd is not None:
                 if fllwd == curses.KEY_RESIZE:
@@ -809,7 +816,10 @@ def reader(stdscr, ebook, index, width, y=0):
         try:
             stdscr.clear()
             stdscr.refresh()
-            pad.refresh(y,0, 0,x, rows-1,x+width)
+            if totlines - y < rows:
+                pad.refresh(y,0, 0,x, totlines-y,x+width)
+            else:
+                pad.refresh(y,0, 0,x, rows-1,x+width)
         except curses.error:
             pass
         k = pad.getch()
