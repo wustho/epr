@@ -2,23 +2,21 @@
 
 ![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
-CLI Epub reader written in Python 3.7 with features:
+Terminal/CLI Epub reader written in Python 3.7 with features:
 
 - Remembers last read file (just run `epr` without any argument)
 - Remembers last reading state for each file (per file saved state written to `$HOME/.config/epr/config` or `$HOME/.epr` respectively depending on availability)
 - Adjustable text area width
+- Adaptive to terminal resize
 - Supports EPUB3 (no audio support)
 - Secondary vim-like bindings
-- Supports images
+- Supports opening images
 
 Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 
 ## Limitations
 
 - Minimum width: 22 cols
-- Resizing terminal & text area width will reset to beginning of current chapter
-- Saved state (reading position & width, but not reading chapter) will reset
-  if current terminal size is incompatible with latest reading state
 - Supports regex search only
 - Doesn't support hyperlinks
 - Some known issues mentioned at the bottom
@@ -26,6 +24,8 @@ Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
 ## Dependencies
 
 - `curses` (Linux) or `windows-curses` (Windows)
+
+Standalone Windows binary available in release page which will let you run `epr` without having python3.7 nor `windows-curses` installed on Windows.
 
 ## Quickly Read from History
 
