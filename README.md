@@ -12,8 +12,6 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 - Secondary vim-like bindings
 - Supports opening images
 
-Inspired by: https://github.com/aerkalov/ebooklib & https://github.com/rupa/epub
-
 ## Limitations
 
 - Minimum width: 22 cols
@@ -125,3 +123,8 @@ Key binding:
 
   But don't worry, you should not miss any part to read. This just won't let you navigate
   to some points using TOC.
+
+## Inspirations
+
+- https://github.com/aerkalov/ebooklib
+- https://github.com/rupa/epub

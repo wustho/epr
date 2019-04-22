@@ -15,10 +15,10 @@ Key Binding:
     Quit            : q
     Scroll down     : DOWN      j
     Scroll up       : UP        k
-    Page down       : PGDN      J   SPC
-    Page up         : PGUP      K
-    Next chapter    : RIGHT     l
-    Prev chapter    : LEFT      h
+    Page down       : PGDN      RIGHT   SPC
+    Page up         : PGUP      LEFT
+    Next chapter    : n
+    Prev chapter    : p
     Beginning of ch : HOME      g
     End of ch       : END       G
     Open image      : o
@@ -52,6 +52,23 @@ from subprocess import run
 from html.parser import HTMLParser
 from difflib import SequenceMatcher as SM
 
+# key bindings
+SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
+SCROLL_UP = {curses.KEY_UP, ord("k")}
+PAGE_DOWN = {curses.KEY_NPAGE, ord("l"), ord(" "), curses.KEY_RIGHT}
+PAGE_UP = {curses.KEY_PPAGE, ord("h"), curses.KEY_LEFT}
+CH_NEXT = {ord("n")}
+CH_PREV = {ord("p")}
+CH_HOME = {curses.KEY_HOME, ord("g")}
+CH_END = {curses.KEY_END, ord("G")}
+SHRINK = ord("-")
+WIDEN = ord("=")
+META = ord("m")
+TOC = {9, ord("\t"), ord("t")}
+FOLLOW = {10}
+QUIT = {ord("q"), 3, 27}
+HELP = {ord("?")}
+
 if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
     if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
@@ -72,23 +89,6 @@ if os.path.exists(statefile):
         state = json.load(f)
 else:
     state = {}
-
-# key bindings
-SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
-SCROLL_UP = {curses.KEY_UP, ord("k")}
-PAGE_DOWN = {curses.KEY_NPAGE, ord("J"), ord(" ")}
-PAGE_UP = {curses.KEY_PPAGE, ord("K")}
-CH_NEXT = {curses.KEY_RIGHT, ord("l")}
-CH_PREV = {curses.KEY_LEFT, ord("h")}
-CH_HOME = {curses.KEY_HOME, ord("g")}
-CH_END = {curses.KEY_END, ord("G")}
-SHRINK = ord("-")
-WIDEN = ord("=")
-META = ord("m")
-TOC = {9, ord("\t"), ord("t")}
-FOLLOW = {10}
-QUIT = {ord("q"), 3, 27}
-HELP = {ord("?")}
 
 NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
       "OPF": "http://www.idpf.org/2007/opf",
@@ -691,11 +691,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
 
     if y < 0 and totlines <= rows:
         y = 0
+    elif pctg is not None:
+        y = round(pctg*totlines)
     else:
-        if pctg is not None:
-            y = round(pctg*totlines)
-        else:
-            y = y % totlines
+        y = y % totlines
 
     pad = curses.newpad(totlines, width + 2) # + 2 unnecessary
     pad.keypad(True)
@@ -858,7 +857,6 @@ def main(stdscr, file):
 
     if cols <= width:
         width = cols - 2
-        y = 0
         if "pctg" in state[epub.path]:
             pctg = float(state[epub.path]["pctg"])
 
