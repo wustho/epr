@@ -449,7 +449,7 @@ def help(stdscr):
     help.addstr(2,2, "----")
     key_help = 0
 
-    src = re.search("Key Bind(\n|.)*", __doc__).group()
+    src = re.search("Key Bind(\n|.)*(?=v)", __doc__).group()
     src_lines = src.splitlines()
     totlines = len(src_lines)
 

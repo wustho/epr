@@ -61,15 +61,15 @@ Options:
     -d              dump epub
     -h, --help      print short/long help
 
-Key binding:
+Key Binding:
     Help            : ?
     Quit            : q
     Scroll down     : DOWN      j
     Scroll up       : UP        k
-    Page down       : PGDN      J   SPC
-    Page up         : PGUP      K
-    Next chapter    : RIGHT     l
-    Prev chapter    : LEFT      h
+    Page down       : PGDN      RIGHT   SPC
+    Page up         : PGUP      LEFT
+    Next chapter    : n
+    Prev chapter    : p
     Beginning of ch : HOME      g
     End of ch       : END       G
     Open image      : o
@@ -78,7 +78,7 @@ Key binding:
     Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
-    TOC             : t
+    ToC             : TAB       t
     Metadata        : m
 ```
 
