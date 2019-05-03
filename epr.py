@@ -30,10 +30,10 @@ Key Binding:
     ToC             : TAB       t
     Metadata        : m
 
-v2.2.6
-MIT License
-Copyright (c) 2019 Benawi Adha
-https://github.com/wustho/epr
+Version : 2.2.7
+License : MIT
+Author  : Benawi Adha
+URL     : https://github.com/wustho/epr
 """
 
 import curses
@@ -199,6 +199,7 @@ class HTMLtoLines(HTMLParser):
     inde = {"q", "dt", "dd", "blockquote", "pre"}
     bull = {"li"}
     hide = {"script", "style", "head"}
+    # hide = {"script", "style", "head", ", "sub}
 
     def __init__(self):
         HTMLParser.__init__(self)
@@ -917,12 +918,19 @@ if __name__ == "__main__":
             del state[i]
         with open(statefile, "w") as f:
             json.dump(state, f, indent=4)
+        if len(args) == 1 and re.match(r"[0-9]+", args[0]) is not None:
+            try:
+                cand = list(state.keys())[int(args[0])-1]
+                val = 1
+            except IndexError:
+                val = 0
         if val != 0 and len({"-r"} & set(args)) == 0:
             file = cand
         else:
             print("\nReading history:")
-            for i in state.keys():
-                print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+            dig = len(str(len(state.keys())+1))
+            for n, i in enumerate(state.keys()):
+                print(str(n+1).rjust(dig) + ("* " if state[i]["lastread"] == "1" else "  ") + i)
             if len({"-r"} & set(args)) != 0:
                 sys.exit()
             else:
