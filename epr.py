@@ -15,10 +15,10 @@ Key Binding:
     Quit            : q
     Scroll down     : DOWN      j
     Scroll up       : UP        k
-    Page down       : PGDN      J   SPC
-    Page up         : PGUP      K
-    Next chapter    : RIGHT     l
-    Prev chapter    : LEFT      h
+    Page down       : PGDN      RIGHT   SPC
+    Page up         : PGUP      LEFT
+    Next chapter    : n
+    Prev chapter    : p
     Beginning of ch : HOME      g
     End of ch       : END       G
     Open image      : o
@@ -30,10 +30,10 @@ Key Binding:
     ToC             : TAB       t
     Metadata        : m
 
-v2.2.6-md
-MIT License
-Copyright (c) 2019 Benawi Adha
-https://github.com/wustho/epr
+Version : 2.2.7-md
+License : MIT
+Author  : Benawi Adha
+URL     : https://github.com/wustho/epr
 """
 
 import curses
@@ -50,6 +50,23 @@ import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from subprocess import run
 from difflib import SequenceMatcher as SM
+
+# key bindings
+SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
+SCROLL_UP = {curses.KEY_UP, ord("k")}
+PAGE_DOWN = {curses.KEY_NPAGE, ord("l"), ord(" "), curses.KEY_RIGHT}
+PAGE_UP = {curses.KEY_PPAGE, ord("h"), curses.KEY_LEFT}
+CH_NEXT = {ord("n")}
+CH_PREV = {ord("p")}
+CH_HOME = {curses.KEY_HOME, ord("g")}
+CH_END = {curses.KEY_END, ord("G")}
+SHRINK = ord("-")
+WIDEN = ord("=")
+META = ord("m")
+TOC = {9, ord("\t"), ord("t")}
+FOLLOW = {10}
+QUIT = {ord("q"), 3, 27}
+HELP = {ord("?")}
 
 if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
@@ -71,23 +88,6 @@ if os.path.exists(statefile):
         state = json.load(f)
 else:
     state = {}
-
-# key bindings
-SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
-SCROLL_UP = {curses.KEY_UP, ord("k")}
-PAGE_DOWN = {curses.KEY_NPAGE, ord("J"), ord(" ")}
-PAGE_UP = {curses.KEY_PPAGE, ord("K")}
-CH_NEXT = {curses.KEY_RIGHT, ord("l")}
-CH_PREV = {curses.KEY_LEFT, ord("h")}
-CH_HOME = {curses.KEY_HOME, ord("g")}
-CH_END = {curses.KEY_END, ord("G")}
-SHRINK = ord("-")
-WIDEN = ord("=")
-META = ord("m")
-TOC = {9, ord("\t"), ord("t")}
-FOLLOW = {10}
-QUIT = {ord("q"), 3, 27}
-HELP = {ord("?")}
 
 NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
       "OPF": "http://www.idpf.org/2007/opf",
@@ -368,7 +368,7 @@ def help(stdscr):
     help.addstr(2,2, "----")
     key_help = 0
 
-    src = re.search("Key Bind(\n|.)*", __doc__).group()
+    src = re.search("Key Bind(\n|.)*(?=Version)", __doc__).group()
     src_lines = src.splitlines()
     totlines = len(src_lines)
 
@@ -618,11 +618,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
 
     if y < 0 and totlines <= rows:
         y = 0
+    elif pctg is not None:
+        y = round(pctg*totlines)
     else:
-        if pctg is not None:
-            y = round(pctg*totlines)
-        else:
-            y = y % totlines
+        y = y % totlines
 
     pad = curses.newpad(len(src_lines), width + 2) # + 2 unnecessary
     pad.keypad(True)
@@ -760,7 +759,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             pass
         k = pad.getch()
 
-def main(stdscr, file):
+def preread(stdscr, file):
     curses.use_default_colors()
     stdscr.keypad(True)
     curses.curs_set(0)
@@ -785,7 +784,6 @@ def main(stdscr, file):
 
     if cols <= width:
         width = cols - 2
-        y = 0
         if "pctg" in state[epub.path]:
             pctg = float(state[epub.path]["pctg"])
 
@@ -795,7 +793,7 @@ def main(stdscr, file):
         incr, width, y, pctg = reader(stdscr, epub, idx, width, y, pctg)
         idx += incr
 
-if __name__ == "__main__":
+def main():
     args = []
     if sys.argv[1:] != []:
         args += sys.argv[1:]
@@ -846,12 +844,19 @@ if __name__ == "__main__":
             del state[i]
         with open(statefile, "w") as f:
             json.dump(state, f, indent=4)
+        if len(args) == 1 and re.match(r"[0-9]+", args[0]) is not None:
+            try:
+                cand = list(state.keys())[int(args[0])-1]
+                val = 1
+            except IndexError:
+                val = 0
         if val != 0 and len({"-r"} & set(args)) == 0:
             file = cand
         else:
             print("\nReading history:")
-            for i in state.keys():
-                print("- " + "(Last Read) " + i if state[i]["lastread"] == "1" else "- " + i)
+            dig = len(str(len(state.keys())+1))
+            for n, i in enumerate(state.keys()):
+                print(str(n+1).rjust(dig) + ("* " if state[i]["lastread"] == "1" else "  ") + i)
             if len({"-r"} & set(args)) != 0:
                 sys.exit()
             else:
@@ -872,4 +877,7 @@ if __name__ == "__main__":
         sys.exit()
 
     else:
-        curses.wrapper(main, file)
+        curses.wrapper(preread, file)
+
+if __name__ == "__main__":
+    main()
