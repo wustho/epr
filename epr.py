@@ -833,7 +833,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             pass
         k = pad.getch()
 
-def main(stdscr, file):
+def preread(stdscr, file):
     curses.use_default_colors()
     stdscr.keypad(True)
     curses.curs_set(0)
@@ -867,7 +867,7 @@ def main(stdscr, file):
         incr, width, y, pctg = reader(stdscr, epub, idx, width, y, pctg)
         idx += incr
 
-if __name__ == "__main__":
+def main():
     args = []
     if sys.argv[1:] != []:
         args += sys.argv[1:]
@@ -956,4 +956,7 @@ if __name__ == "__main__":
         sys.exit()
 
     else:
-        curses.wrapper(main, file)
+        curses.wrapper(preread, file)
+
+if __name__ == "__main__":
+    main()
