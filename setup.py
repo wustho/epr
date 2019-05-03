@@ -19,7 +19,7 @@ with open("epr.py", "r") as f:
 setup(
     name = "epr",
     version = vers,
-    description = "Terminal/CLI Epub reader",
+    description = "Terminal/CLI Epub Reader",
     long_description = longdesc,
     long_description_content_type = "text/markdown",
     url = "https://github.com/wustho/epr",
