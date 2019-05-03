@@ -25,11 +25,12 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 
 ## Installation
 
+Clone this repo, tweak `epr.py` as much as you see fit, rename it to `epr`, make it executable and put it somewhere in `PATH`.
+Or simply (be careful if you already have package named `epr` installed):
+
 ```shell
 $ pip install git+https://github.com/wustho/epr.git
 ```
-
-Or simply clone this repo, rename `epr.py` to `epr`, make it executable and put it somewhere in `PATH`.
 
 ## Quickly Read from History
 
@@ -51,7 +52,7 @@ Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's o
 
 ## Vanilla or Markdown?
 
-If you'd like to read epub in markdown format (which _requires_ module `html2text`), install it by:
+If you'd like to read epub in markdown format, which _requires_ additional dependency: `html2text`, checkout `markdown` branch of this repo or simply:
 
 ```shell
 $ pip install git+https://github.com/wustho/epr.git@markdown
@@ -109,6 +110,8 @@ Key Binding:
   # to get 1 paragraph before and after a paragraph containing "Overdue"
   $ epr -d the_girl_next_door.epub | grep Overdue -C 2
   ```
+
+- <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
 
 - "-" chapters in TOC
 

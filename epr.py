@@ -222,6 +222,10 @@ class HTMLtoLines(HTMLParser):
             self.isbull = True
         elif tag in self.hide:
             self.ishidden = True
+        elif tag == "sup":
+            self.text[-1] += "^{"
+        elif tag == "sub":
+            self.text[-1] += "_{"
 
     def handle_startendtag(self, tag, attrs):
         if tag == "br":
@@ -250,6 +254,8 @@ class HTMLtoLines(HTMLParser):
             if self.text[-1] != "":
                 self.text.append("")
             self.isbull = False
+        elif tag in {"sub", "sup"}:
+            self.text[-1] += "}"
 
     def handle_data(self, raw):
         if raw and not self.ishidden:
