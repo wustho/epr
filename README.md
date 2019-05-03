@@ -17,13 +17,19 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 - Minimum width: 22 cols
 - Supports regex search only
 - Doesn't support hyperlinks
-- Some known issues mentioned at the bottom
+- Some known issues mentioned below
 
 ## Dependencies
 
 - `curses` (Linux) or `windows-curses` (Windows)
 
-Standalone Windows binary available in release page which will let you run `epr` without having python3.7 nor `windows-curses` installed on Windows.
+## Installation
+
+```shell
+$ pip install git+https://github.com/wustho/epr.git
+```
+
+Or simply clone this repo, rename `epr.py` to `epr`, make it executable and put it somewhere in `PATH`.
 
 ## Quickly Read from History
 
@@ -45,7 +51,12 @@ Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's o
 
 ## Vanilla or Markdown?
 
-If you'd like to read epub in markdown format, checkout `vX.X.X-md` (which _requires_ module `html2text`) from release page.
+If you'd like to read epub in markdown format (which _requires_ module `html2text`), install it by:
+
+```shell
+$ pip install git+https://github.com/wustho/epr.git@markdown
+```
+
 Useful when you read more nonfiction reference epub (like manual or documentation) than fiction one.
 
 ## Usages
