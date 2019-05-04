@@ -8,7 +8,7 @@ Usages:
 Options:
     -r              print reading history
     -d              dump epub
-    -h, --help      print short/long help
+    -h, --help      print short, long help
 
 Key Binding:
     Help            : ?
@@ -29,12 +29,12 @@ Key Binding:
     Enlarge         : =
     ToC             : TAB       t
     Metadata        : m
-
-Version : 2.2.7
-License : MIT
-Author  : Benawi Adha
-URL     : https://github.com/wustho/epr
 """
+
+__version__ = "2.2.7"
+__license__ = "MIT"
+__author__ = "Benawi Adha"
+__url__ = "https://github.com/wustho/epr"
 
 import curses
 import zipfile
@@ -456,7 +456,7 @@ def help(stdscr):
     help.addstr(2,2, "----")
     key_help = 0
 
-    src = re.search("Key Bind(\n|.)*(?=Version)", __doc__).group()
+    src = re.search("Key Bind(\n|.)*", __doc__).group()
     src_lines = src.splitlines()
     totlines = len(src_lines)
 
