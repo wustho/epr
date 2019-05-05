@@ -684,15 +684,16 @@ def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
     ntoc = 0
     for n, i in enumerate(toc_idx):
         if index == i:
+            ntoc = n
             if toc_sect[n] != "":
                 try:
                     if y >= toc_secid[toc_sect[n]]:
                         ntoc = n
                     else:
+                        ntoc -= 1
                         break
                 except KeyError:
                     pass
-            ntoc = n
         elif i > index:
             break
     return ntoc
@@ -771,11 +772,23 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
         elif k in CH_NEXT:
             ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
             if ntoc < len(toc_idx) - 1:
-                return toc_idx[ntoc+1]-index, width, 0, None, toc_sect[ntoc+1]
+                if index == toc_idx[ntoc+1]:
+                    try:
+                        y = toc_secid[toc_sect[ntoc+1]]
+                    except KeyError:
+                        pass
+                else:
+                    return toc_idx[ntoc+1]-index, width, 0, None, toc_sect[ntoc+1]
         elif k in CH_PREV:
             ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
             if ntoc > 0:
-                return toc_idx[ntoc-1]-index, width, 0, None, toc_sect[ntoc-1]
+                if index == toc_idx[ntoc-1]:
+                    try:
+                        y = toc_secid[toc_sect[ntoc-1]]
+                    except KeyError:
+                        pass
+                else:
+                    return toc_idx[ntoc-1]-index, width, 0, None, toc_sect[ntoc-1]
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
@@ -787,7 +800,13 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
                 if fllwd == curses.KEY_RESIZE:
                     k = fllwd
                     continue
-                return toc_idx[fllwd] - index, width, 0, None, toc_sect[fllwd]
+                if index == toc_idx[fllwd]:
+                    try:
+                        y = toc_secid[toc_sect[fllwd]]
+                    except KeyError:
+                        pass
+                else:
+                    return toc_idx[fllwd] - index, width, 0, None, toc_sect[fllwd]
         elif k == META:
             k = meta(stdscr, ebook)
             if k == curses.KEY_RESIZE:
