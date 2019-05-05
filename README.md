@@ -1,5 +1,7 @@
 # `$ epr` [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+**Version with TOC behavior like in common readers**
+
 ![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
 Terminal/CLI Epub reader written in Python 3.7 with features:
@@ -113,30 +115,42 @@ Key Binding:
 
 2. <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
 
-3. "-" chapters in TOC
+3. Some TOC issues:
 
-   This happens because not every chapter file (inside some epubs) is given navigation points.
-   Some epubs even won't let you navigate between chapter, thus you'll find all chapters named as
-   "-" using `epr` for these kind of epubs.
+   - "-" chapters in TOC
 
-4. Skipped chapters in TOC
+     This happens because not every chapter file (inside some epubs) is given navigation points.
+     Some epubs even won't let you navigate between chapter, thus you'll find all chapters named as
+     "-" using `epr` for these kind of epubs.
 
-   Example:
+   - Skipped chapters in TOC
 
+     Example:
+
+     ```
+     Table of Contents
+     -----------------
+
+	     1. Title Page
+	     2. Chapter I
+	     3. Chapter V
+     ```
+
+     This happens because Chapter II to Chapter IV is probably in the same file with Chapter I,
+     but in different sections, e. g. `ch000.html#section1` and `ch000.html#section2.`
+
+     But don't worry, you should not miss any part to read. This just won't let you navigate
+     to some points using TOC.
+
+   If you feel bothered by these 2 TOC issues, checkout branch `commontoc` or install via:
+
+   ```shell
+   $ pip install git+https://github.com/wustho/epr.git@commontoc
    ```
-   Table of Contents
-   -----------------
 
-	   1. Title Page
-	   2. Chapter I
-	   3. Chapter V
-   ```
+   which will give you TOC behavior like in many common readers.
 
-   This happens because Chapter II to Chapter IV is probably in the same file with Chapter I,
-   but in different sections, e. g. `ch000.html#section1` and `ch000.html#section2.`
-
-   But don't worry, you should not miss any part to read. This just won't let you navigate
-   to some points using TOC.
+   NOTE: I'm not merging `commontoc` to `master` since `master` already does most of its job efficiently and (supposedly, I'm not doing any test) faster. It just navigates between files inside epub rather than pre-defined sections like `commontoc` does.
 
 ## Inspirations
 

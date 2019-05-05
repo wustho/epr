@@ -31,7 +31,7 @@ Key Binding:
     Metadata        : m
 """
 
-__version__ = "2.2.7"
+__version__ = "2.2.7b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -135,7 +135,7 @@ class Epub:
             self.toc = self.rootdir + cont.find("OPF:manifest/*[@properties='nav']", NS).get("href")
 
         self.contents = []
-        self.toc_entries = []
+        self.toc_entries = [[], [], []]
 
     def get_meta(self):
         meta = []
@@ -178,21 +178,21 @@ class Epub:
             navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
         elif self.version == "3.0":
             navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
-        for i in contents:
-            name = "-"
-            for j in navPoints:
-                # EPUB3
-                if self.version == "2.0":
-                    # if i == unquote(j.find("DAISY:content", NS).get("src")):
-                    if re.search(i, unquote(j.find("DAISY:content", NS).get("src"))) is not None:
-                        name = j.find("DAISY:navLabel/DAISY:text", NS).text
-                        break
-                elif self.version == "3.0":
-                    # if i == unquote(j.get("href")):
-                    if re.search(i, unquote(j.get("href"))) is not None:
-                        name = "".join(list(j.itertext()))
-                        break
-            self.toc_entries.append(name)
+        for i in navPoints:
+            if self.version == "2.0":
+                src = i.find("DAISY:content", NS).get("src")
+                name = i.find("DAISY:navLabel/DAISY:text", NS).text
+            elif self.version == "3.0":
+                src = i.get("href")
+                name = "".join(list(i.itertext()))
+            src = src.split("#")
+            idx = contents.index(unquote(src[0]))
+            self.toc_entries[0].append(name)
+            self.toc_entries[1].append(idx)
+            if len(src) == 2:
+                self.toc_entries[2].append(src[1])
+            elif len(src) == 1:
+                self.toc_entries[2].append("")
 
 class HTMLtoLines(HTMLParser):
     para = {"p", "div"}
@@ -201,7 +201,7 @@ class HTMLtoLines(HTMLParser):
     hide = {"script", "style", "head"}
     # hide = {"script", "style", "head", ", "sub}
 
-    def __init__(self):
+    def __init__(self, sects={""}):
         HTMLParser.__init__(self)
         self.text = [""]
         self.imgs = []
@@ -212,6 +212,7 @@ class HTMLtoLines(HTMLParser):
         self.idhead = set()
         self.idinde = set()
         self.idbull = set()
+        self.sects = sects
 
     def handle_starttag(self, tag, attrs):
         if re.match("h[1-6]", tag) is not None:
@@ -226,6 +227,10 @@ class HTMLtoLines(HTMLParser):
             self.text[-1] += "^{"
         elif tag == "sub":
             self.text[-1] += "_{"
+        if self.sects != {""}:
+            for i in attrs:
+                if i[1] in self.sects:
+                    self.text[-1] += " (#" + i[1] + ") "
 
     def handle_startendtag(self, tag, attrs):
         if tag == "br":
@@ -357,8 +362,6 @@ def toc(stdscr, src, index, width):
         elif key_toc in SCROLL_DOWN and index + 1 < totlines:
             index += 1
         elif key_toc in FOLLOW:
-            if index == oldindex:
-                break
             return index
         elif key_toc in PAGE_UP:
             index -= 3
@@ -673,7 +676,24 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         pad.refresh(y,0, 0,x, rows-2,x+width)
         s = pad.getch()
 
-def reader(stdscr, ebook, index, width, y, pctg):
+def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
+    ntoc = 0
+    for n, i in enumerate(toc_idx):
+        if index == i:
+            if toc_sect[n] != "":
+                try:
+                    if y >= toc_secid[toc_sect[n]]:
+                        ntoc = n
+                    else:
+                        break
+                except KeyError:
+                    pass
+            ntoc = n
+        elif i > index:
+            break
+    return ntoc
+
+def reader(stdscr, ebook, index, width, y, pctg, sect):
     k = 0 if SEARCHPATTERN is None else ord("/")
     rows, cols = stdscr.getmaxyx()
     x = (cols - width) // 2
@@ -681,12 +701,14 @@ def reader(stdscr, ebook, index, width, y, pctg):
     stdscr.refresh()
 
     contents = ebook.contents
-    toc_src = ebook.toc_entries
+    toc_name, toc_idx, toc_sect = ebook.toc_entries[0], ebook.toc_entries[1], ebook.toc_entries[2]
+    toc_secid = {}
     chpath = contents[index]
     content = ebook.file.open(chpath).read()
     content = content.decode("utf-8")
 
-    parser = HTMLtoLines()
+    parser = HTMLtoLines(set(toc_sect))
+    # parser = HTMLtoLines()
     try:
         parser.feed(content)
         parser.close()
@@ -706,18 +728,22 @@ def reader(stdscr, ebook, index, width, y, pctg):
     pad = curses.newpad(totlines, width + 2) # + 2 unnecessary
     pad.keypad(True)
     for n, i in enumerate(src_lines):
+        findsect = re.search(r"(?<=\(#).*?(?=\))", i)
+        if findsect is not None:
+            # TODO: check
+            i = i.replace(" (#" + findsect.group() + ") ", "")
+            toc_secid[findsect.group()] = n
         if re.search("\[IMG:[0-9]+\]", i):
             pad.addstr(n, width//2 - len(i)//2 - RIGHTPADDING, i, curses.A_REVERSE)
         else:
             pad.addstr(n, 0, i)
-    if index == 0:
-        suff = "     End --> "
-    elif index == len(contents) - 1:
-        suff = " <-- End     "
-    else:
-        suff = " <-- End --> "
-    pad.addstr(n, width//2 - 7 - RIGHTPADDING, suff, curses.A_REVERSE)
     pad.refresh(y,0, 0,x, rows-1,x+width)
+
+    if sect != "":
+        try:
+            y = toc_secid[sect]
+        except KeyError:
+            pass
 
     while True:
         if k in QUIT:
@@ -727,37 +753,42 @@ def reader(stdscr, ebook, index, width, y, pctg):
             if y > 0:
                 y -= 1
             elif index != 0:
-                return -1, width, -rows, None
+                return -1, width, -rows, None, ""
         elif k in PAGE_UP:
             if y == 0 and index != 0:
-                return -1, width, -rows, None
+                return -1, width, -rows, None, ""
             else:
                 y = pgup(y, rows, LINEPRSRV)
         elif k in SCROLL_DOWN:
             if y < totlines - rows:
                 y += 1
             elif index != len(contents)-1:
-                return 1, width, 0, None
+                return 1, width, 0, None, ""
         elif k in PAGE_DOWN:
             if totlines - y - LINEPRSRV > rows:
                 y += rows - LINEPRSRV
             elif index != len(contents)-1:
-                return 1, width, 0, None
-        elif k in CH_NEXT and index < len(contents) - 1:
-            return 1, width, 0, None
-        elif k in CH_PREV and index > 0:
-            return -1, width, 0, None
+                return 1, width, 0, None, ""
+        elif k in CH_NEXT:
+            ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
+            if ntoc < len(toc_idx) - 1:
+                return toc_idx[ntoc+1]-index, width, 0, None, toc_sect[ntoc+1]
+        elif k in CH_PREV:
+            ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
+            if ntoc > 0:
+                return toc_idx[ntoc-1]-index, width, 0, None, toc_sect[ntoc-1]
         elif k in CH_HOME:
             y = 0
         elif k in CH_END:
             y = pgend(totlines, rows)
         elif k in TOC:
-            fllwd = toc(stdscr, toc_src, index, width)
+            ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
+            fllwd = toc(stdscr, toc_name, ntoc, width)
             if fllwd is not None:
                 if fllwd == curses.KEY_RESIZE:
                     k = fllwd
                     continue
-                return fllwd - index, width, 0, None
+                return toc_idx[fllwd] - index, width, 0, None, toc_sect[fllwd]
         elif k == META:
             k = meta(stdscr, ebook)
             if k == curses.KEY_RESIZE:
@@ -768,17 +799,17 @@ def reader(stdscr, ebook, index, width, y, pctg):
                 continue
         elif k == WIDEN and (width + 2) < cols:
             width += 2
-            return 0, width, 0, y/totlines
+            return 0, width, 0, y/totlines, ""
         elif k == SHRINK and width >= 22:
             width -= 2
-            return 0, width, 0, y/totlines
+            return 0, width, 0, y/totlines, ""
         elif k == ord("/"):
             fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
             if fs == curses.KEY_RESIZE:
                 k = fs
                 continue
             elif SEARCHPATTERN is not None:
-                return fs, width, 0, None
+                return fs, width, 0, None, ""
             else:
                 y = fs
         elif k == ord("o") and VWR is not None:
@@ -824,9 +855,9 @@ def reader(stdscr, ebook, index, width, y, pctg):
                 rows, cols = stdscr.getmaxyx()
                 curses.resize_term(rows, cols)
             if cols <= width:
-                return 0, cols - 2, 0, y/totlines
+                return 0, cols - 2, 0, y/totlines, ""
             else:
-                return 0, width, y, None
+                return 0, width, y, None, ""
 
         try:
             stdscr.clear()
@@ -869,8 +900,9 @@ def preread(stdscr, file):
 
     epub.initialize()
 
+    sec = ""
     while True:
-        incr, width, y, pctg = reader(stdscr, epub, idx, width, y, pctg)
+        incr, width, y, pctg, sec = reader(stdscr, epub, idx, width, y, pctg, sec)
         idx += incr
 
 def main():
