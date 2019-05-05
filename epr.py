@@ -683,7 +683,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
 def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
     ntoc = 0
     for n, i in enumerate(toc_idx):
-        if index == i:
+        if index >= i:
             ntoc = n
             if toc_sect[n] != "":
                 try:
