@@ -804,7 +804,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
                     try:
                         y = toc_secid[toc_sect[fllwd]]
                     except KeyError:
-                        pass
+                        y = 0
                 else:
                     return toc_idx[fllwd] - index, width, 0, None, toc_sect[fllwd]
         elif k == META:
