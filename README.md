@@ -96,47 +96,59 @@ Key Binding:
 
 ## Known Issues
 
-- Search function can't find occurences that span across multiple lines
+1. Search function can't find occurences that span across multiple lines
 
-  Only capable of finding pattern that span inside a single line, not sentence.
-  So works more effectively for finding word or letter rather than long phrase or sentence.
+   Only capable of finding pattern that span inside a single line, not sentence.
+   So works more effectively for finding word or letter rather than long phrase or sentence.
 
-  As workarounds, You can increase text area width to increase its reach or dump
+   As workarounds, You can increase text area width to increase its reach or dump
   the content of epub using `-d` option, which will dump each paragraph into a single line separated by empty line (or lines depending on the epub), to be later piped into `grep`, `rg` etc. Pretty useful to find book quotes.
 
-  Example:
+   Example:
 
-  ```shell
-  # to get 1 paragraph before and after a paragraph containing "Overdue"
-  $ epr -d the_girl_next_door.epub | grep Overdue -C 2
-  ```
+   ```shell
+   # to get 1 paragraph before and after a paragraph containing "Overdue"
+   $ epr -d the_girl_next_door.epub | grep Overdue -C 2
+   ```
 
-- <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
+2. <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
 
-- "-" chapters in TOC
+3. Some TOC issues:
 
-  This happens because not every chapter file (inside some epubs) is given navigation points.
-  Some epubs even won't let you navigate between chapter, thus you'll find all chapters named as
-  "-" using `epr` for these kind of epubs.
+   - "-" chapters in TOC
 
-- Skipped chapters in TOC
+     This happens because not every chapter file (inside some epubs) is given navigation points.
+     Some epubs even won't let you navigate between chapter, thus you'll find all chapters named as
+     "-" using `epr` for these kind of epubs.
 
-  Example:
+   - Skipped chapters in TOC
 
-  ```
-  Table of Contents
-  -----------------
+     Example:
 
-	  1. Title Page
-	  2. Chapter I
-	  3. Chapter V
-  ```
+     ```
+     Table of Contents
+     -----------------
 
-  This happens because Chapter II to Chapter IV is probably in the same file with Chapter I,
-  but in different sections, e. g. `ch000.html#section1` and `ch000.html#section2.`
+	     1. Title Page
+	     2. Chapter I
+	     3. Chapter V
+     ```
 
-  But don't worry, you should not miss any part to read. This just won't let you navigate
-  to some points using TOC.
+     This happens because Chapter II to Chapter IV is probably in the same file with Chapter I,
+     but in different sections, e. g. `ch000.html#section1` and `ch000.html#section2.`
+
+     But don't worry, you should not miss any part to read. This just won't let you navigate
+     to some points using TOC.
+
+   If you feel bothered by these 2 TOC issues, checkout branch `commontoc` or install via:
+
+   ```shell
+   $ pip install git+https://github.com/wustho/epr.git@commontoc
+   ```
+
+   which will give you TOC behavior like in many common readers.
+
+   NOTE: I'm not merging `commontoc` to `master` since `master` already does most of its job efficiently and (supposedly, I'm not doing any test) faster. It just navigates between files inside epub rather than pre-defined sections like `commontoc` does.
 
 ## Inspirations
 
