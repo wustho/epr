@@ -278,10 +278,14 @@ class HTMLtoLines(HTMLParser):
                 self.idinde.add(len(self.text)-1)
 
     def get_lines(self, width=0):
-        text = []
+        text, sect = [], {}
         if width == 0:
             return self.text
         for n, i in enumerate(self.text):
+            findsect = re.search(r"(?<= \(#).*?(?=\) )", i)
+            if findsect is not None and findsect.group() in self.sects:
+                i = i.replace(" (#" + findsect.group() + ") ", "")
+                sect[findsect.group()] = len(text)
             if n in self.idhead:
                 text += [i.rjust(width//2 + len(i)//2 - RIGHTPADDING)] + [""]
             elif n in self.idinde:
@@ -291,7 +295,7 @@ class HTMLtoLines(HTMLParser):
                 text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
             else:
                 text += textwrap.fill(i, width).splitlines() + [""]
-        return text, self.imgs
+        return text, self.imgs, sect
 
 def savestate(file, index, width, pos, pctg ):
     for i in state:
@@ -715,7 +719,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
     except:
         pass
 
-    src_lines, imgs = parser.get_lines(width)
+    src_lines, imgs, toc_secid = parser.get_lines(width)
     totlines = len(src_lines)
 
     if y < 0 and totlines <= rows:
@@ -728,11 +732,6 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
     pad = curses.newpad(totlines, width + 2) # + 2 unnecessary
     pad.keypad(True)
     for n, i in enumerate(src_lines):
-        findsect = re.search(r"(?<=\(#).*?(?=\))", i)
-        if findsect is not None:
-            # TODO: check
-            i = i.replace(" (#" + findsect.group() + ") ", "")
-            toc_secid[findsect.group()] = n
         if re.search("\[IMG:[0-9]+\]", i):
             pad.addstr(n, width//2 - len(i)//2 - RIGHTPADDING, i, curses.A_REVERSE)
         else:
