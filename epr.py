@@ -96,7 +96,6 @@ NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
       "XHTML": "http://www.w3.org/1999/xhtml",
       "EPUB": "http://www.idpf.org/2007/ops"}
 
-RIGHTPADDING = 0  # default = 2
 LINEPRSRV = 0  # default = 2
 
 SEARCHPATTERN = None
@@ -278,7 +277,7 @@ class HTMLtoLines(HTMLParser):
             return self.text
         for n, i in enumerate(self.text):
             if n in self.idhead:
-                text += [i.rjust(width//2 + len(i)//2 - RIGHTPADDING)] + [""]
+                text += [i.rjust(width//2 + len(i)//2)] + [""]
             elif n in self.idinde:
                 text += ["   "+j for j in textwrap.fill(i, width - 3).splitlines()] + [""]
             elif n in self.idbull:
@@ -677,8 +676,6 @@ def reader(stdscr, ebook, index, width, y, pctg):
     k = 0 if SEARCHPATTERN is None else ord("/")
     rows, cols = stdscr.getmaxyx()
     x = (cols - width) // 2
-    stdscr.clear()
-    stdscr.refresh()
 
     contents = ebook.contents
     toc_src = ebook.toc_entries
@@ -707,7 +704,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         if re.search("\[IMG:[0-9]+\]", i):
-            pad.addstr(n, width//2 - len(i)//2 - RIGHTPADDING, i, curses.A_REVERSE)
+            pad.addstr(n, width//2 - len(i)//2, i, curses.A_REVERSE)
         else:
             pad.addstr(n, 0, i)
     if index == 0:
@@ -716,7 +713,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
         suff = " <-- End     "
     else:
         suff = " <-- End --> "
-    pad.addstr(n, width//2 - 7 - RIGHTPADDING, suff, curses.A_REVERSE)
+    pad.addstr(n, width//2 - 7, suff, curses.A_REVERSE)
+
+    stdscr.clear()
+    stdscr.refresh()
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     while True:
