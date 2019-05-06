@@ -790,9 +790,20 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
                 else:
                     return toc_idx[ntoc-1]-index, width, 0, None, toc_sect[ntoc-1]
         elif k in CH_HOME:
-            y = 0
+            ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
+            try:
+                y = toc_secid[toc_sect[ntoc]]
+            except KeyError:
+                y = 0
         elif k in CH_END:
-            y = pgend(totlines, rows)
+            ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
+            try:
+                if toc_secid[toc_sect[ntoc+1]] - rows >=0:
+                    y = toc_secid[toc_sect[ntoc+1]] - rows
+                else:
+                    y = toc_secid[toc_sect[ntoc]]
+            except (KeyError, IndexError):
+                y = pgend(totlines, rows)
         elif k in TOC:
             ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
             fllwd = toc(stdscr, toc_name, ntoc, width)
