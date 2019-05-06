@@ -689,7 +689,8 @@ def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
                     if y >= toc_secid[toc_sect[n]]:
                         ntoc = n
                     else:
-                        ntoc -= 1
+                        if ntoc > 0:
+                            ntoc -= 1
                         break
                 except KeyError:
                     pass
