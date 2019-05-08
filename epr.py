@@ -947,6 +947,13 @@ def main():
         print(hlp)
         sys.exit()
 
+    if len({"-v", "--version", "-V"} & set(args)) != 0:
+        print(__version__)
+        print(__license__, "License")
+        print("Copyright (c) 2019", __author__)
+        print(__url__)
+        sys.exit()
+
     if len({"-d"} & set(args)) != 0:
         args.remove("-d")
         dump = True
