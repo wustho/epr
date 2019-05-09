@@ -32,6 +32,12 @@ Or simply (be careful if you already have package named `epr` installed):
 $ pip install git+https://github.com/wustho/epr.git
 ```
 
+Or via chocolatey (maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)):
+
+```shell
+$ choco install epr
+```
+
 ## Quickly Read from History
 
 Rather than invoking `epr /path/to/file` each time you are going to read, you might find it easier to do just `epr STRINGS.`
