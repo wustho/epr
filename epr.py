@@ -31,7 +31,7 @@ Key Binding:
     Metadata        : m
 """
 
-__version__ = "2.2.7b"
+__version__ = "2.2.8b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -156,8 +156,6 @@ class Epub:
                     i.get("id"),
                     i.get("href")
                 ])
-            else:
-                toc = self.rootdir + unquote(i.get("href"))
 
         spine, contents = [], []
         for i in cont.findall("OPF:spine/*", NS):
@@ -171,7 +169,7 @@ class Epub:
                     # TODO: test is break necessary
                     break
 
-        toc = ET.parse(self.file.open(toc)).getroot()
+        toc = ET.parse(self.file.open(self.toc)).getroot()
         # EPUB3
         if self.version == "2.0":
             navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
