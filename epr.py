@@ -31,7 +31,7 @@ Key Binding:
     Metadata        : m
 """
 
-__version__ = "2.2.8b"
+__version__ = "2.2.9b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -387,9 +387,9 @@ def toc(stdscr, src, index, width):
 
         for n in range(totlines):
             att = curses.A_REVERSE if index == n else curses.A_NORMAL
-            pre = "> " if index == n else "  "
+            pre = ">>" if index == n else "  "
             pad.addstr(n, 0, pre)
-            pad.chgat(n, 1, span[n], att)
+            pad.chgat(n, 0, span[n], att)
 
         pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
@@ -739,10 +739,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
     if sect != "":
-        try:
-            y = toc_secid[sect]
-        except KeyError:
-            pass
+        y = toc_secid.get(sect, 0)
 
     while True:
         if k in QUIT:
@@ -782,10 +779,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
             ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
             if ntoc > 0:
                 if index == toc_idx[ntoc-1]:
-                    try:
-                        y = toc_secid[toc_sect[ntoc-1]]
-                    except KeyError:
-                        pass
+                    y = toc_secid.get(toc_sect[ntoc-1], 0)
                 else:
                     return toc_idx[ntoc-1]-index, width, 0, None, toc_sect[ntoc-1]
         elif k in CH_HOME:
