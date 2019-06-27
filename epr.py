@@ -34,7 +34,7 @@ Key Binding:
     Metadata        : m
 """
 
-__version__ = "2.2.9b"
+__version__ = "2.2.10b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -227,6 +227,11 @@ class HTMLtoLines(HTMLParser):
             self.text[-1] += "^{"
         elif tag == "sub":
             self.text[-1] += "_{"
+        elif tag == "image":
+            for i in attrs:
+                if i[0] == "xlink:href":
+                    self.text.append("[IMG:{}]".format(len(self.imgs)))
+                    self.imgs.append(unquote(i[1]))
         if self.sects != {""}:
             for i in attrs:
                 if i[1] in self.sects:
@@ -261,6 +266,8 @@ class HTMLtoLines(HTMLParser):
             self.isbull = False
         elif tag in {"sub", "sup"}:
             self.text[-1] += "}"
+        elif tag == "image":
+            self.text.append("")
 
     def handle_data(self, raw):
         if raw and not self.ishidden:
