@@ -1,7 +1,5 @@
 # `$ epr` [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Version with TOC behavior like in common readers**
-
 ![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
 Terminal/CLI Epub reader written in Python 3.7 with features:
@@ -18,8 +16,8 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 
 - Minimum width: 22 cols
 - Supports regex search only
-- Doesn't support hyperlinks
 - Supports only horizontal left-to-right text
+- Doesn't support hyperlinks
 - Some known issues mentioned below
 
 ## Dependencies
@@ -33,6 +31,12 @@ Or simply (be careful if you already have package named `epr` installed):
 
 ```shell
 $ pip install git+https://github.com/wustho/epr.git
+```
+
+Or via chocolatey (maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)):
+
+```shell
+$ choco install epr
 ```
 
 ## Quickly Read from History
@@ -70,11 +74,13 @@ Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
     epr STRINGS     read matched STRINGS from history
+    epr NUMBER      read file from history
+                    with associated NUMBER
 
 Options:
     -r              print reading history
     -d              dump epub
-    -h, --help      print short/long help
+    -h, --help      print short, long help
 
 Key Binding:
     Help            : ?
@@ -93,6 +99,7 @@ Key Binding:
     Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
+    Toggle width    : 0
     ToC             : TAB       t
     Metadata        : m
 ```
