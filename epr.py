@@ -29,6 +29,7 @@ Key Binding:
     Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
+    Toggle width    : 0
     ToC             : TAB       t
     Metadata        : m
 """
@@ -827,6 +828,11 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
         elif k == SHRINK and width >= 22:
             width -= 2
             return 0, width, 0, y/totlines, ""
+        elif k == ord("0"):
+            if width != 80 and cols - 2 >= 80:
+                return 0, 80, 0, y/totlines, ""
+            else:
+                return 0, cols - 2, 0, y/totlines, ""
         elif k == ord("/"):
             fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
             if fs == curses.KEY_RESIZE:
