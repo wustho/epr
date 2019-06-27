@@ -4,6 +4,8 @@ Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
     epr STRINGS     read matched STRINGS from history
+    epr NUMBER      read file from history
+                    with associated NUMBER
 
 Options:
     -r              print reading history
@@ -27,11 +29,12 @@ Key Binding:
     Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
+    Toggle width    : 0
     ToC             : TAB       t
     Metadata        : m
 """
 
-__version__ = "2.2.8"
+__version__ = "2.2.9"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -380,9 +383,9 @@ def toc(stdscr, src, index, width):
 
         for n in range(totlines):
             att = curses.A_REVERSE if index == n else curses.A_NORMAL
-            pre = "> " if index == n else "  "
+            pre = ">>" if index == n else "  "
             pad.addstr(n, 0, pre)
-            pad.chgat(n, 1, span[n], att)
+            pad.chgat(n, 0, span[n], att)
 
         pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
@@ -406,7 +409,7 @@ def meta(stdscr, ebook):
     for i in ebook.get_meta():
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
-        mdata += textwrap.fill(i[0] + " : " + data, wi - 6).splitlines()
+        mdata += textwrap.fill(i[0].upper() + ": " + data, wi - 6).splitlines()
     src_lines = mdata
     totlines = len(src_lines)
 
@@ -770,6 +773,11 @@ def reader(stdscr, ebook, index, width, y, pctg):
         elif k == SHRINK and width >= 22:
             width -= 2
             return 0, width, 0, y/totlines
+        elif k == ord("0"):
+            if width != 80 and cols - 2 >= 80:
+                return 0, 80, 0, y/totlines
+            else:
+                return 0, cols - 2, 0, y/totlines
         elif k == ord("/"):
             fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
             if fs == curses.KEY_RESIZE:
