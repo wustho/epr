@@ -19,6 +19,7 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 - Minimum width: 22 cols
 - Supports regex search only
 - Doesn't support hyperlinks
+- Supports only horizontal left-to-right text
 - Some known issues mentioned below
 
 ## Dependencies

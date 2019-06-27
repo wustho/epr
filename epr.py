@@ -4,6 +4,8 @@ Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
     epr STRINGS     read matched STRINGS from history
+    epr NUMBER      read file from history
+                    with associated NUMBER
 
 Options:
     -r              print reading history
@@ -413,7 +415,7 @@ def meta(stdscr, ebook):
     for i in ebook.get_meta():
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
-        mdata += textwrap.fill(i[0] + " : " + data, wi - 6).splitlines()
+        mdata += textwrap.fill(i[0].upper() + ": " + data, wi - 6).splitlines()
     src_lines = mdata
     totlines = len(src_lines)
 
