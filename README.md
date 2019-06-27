@@ -16,6 +16,7 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 
 - Minimum width: 22 cols
 - Supports regex search only
+- Supports only horizontal left-to-right text
 - Doesn't support hyperlinks
 - Some known issues mentioned below
 
@@ -73,11 +74,13 @@ Usages:
     epr             read last epub
     epr EPUBFILE    read EPUBFILE
     epr STRINGS     read matched STRINGS from history
+    epr NUMBER      read file from history
+                    with associated NUMBER
 
 Options:
     -r              print reading history
     -d              dump epub
-    -h, --help      print short/long help
+    -h, --help      print short, long help
 
 Key Binding:
     Help            : ?
@@ -96,6 +99,7 @@ Key Binding:
     Prev Occurence  : N
     Shrink          : -
     Enlarge         : =
+    Toggle width    : 0
     ToC             : TAB       t
     Metadata        : m
 ```
