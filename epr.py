@@ -34,7 +34,7 @@ Key Binding:
     Metadata        : m
 """
 
-__version__ = "2.2.10b"
+__version__ = "2.2.11b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -688,20 +688,10 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         s = pad.getch()
 
 def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
-    ntoc = 0
-    for n, i in enumerate(toc_idx):
-        if index >= i:
-            ntoc = n
-            if toc_sect[n] != "":
-                try:
-                    if y >= toc_secid[toc_sect[n]]:
-                        ntoc = n
-                    else:
-                        if ntoc > 0:
-                            ntoc -= 1
-                        break
-                except KeyError:
-                    pass
+    for n, (i, j) in enumerate(zip(toc_idx, toc_sect)):
+        if i == index:
+            if y >= toc_secid.get(j, 0):
+                ntoc = n
         elif i > index:
             break
     return ntoc
