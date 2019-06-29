@@ -34,10 +34,12 @@ Key Binding:
     Metadata        : m
 """
 
+
 __version__ = "2.2.11b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
+
 
 import curses
 import zipfile
@@ -55,6 +57,7 @@ from subprocess import run
 from html.parser import HTMLParser
 from difflib import SequenceMatcher as SM
 
+
 # key bindings
 SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
 SCROLL_UP = {curses.KEY_UP, ord("k")}
@@ -71,6 +74,7 @@ TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
 QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
+
 
 if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
@@ -93,16 +97,9 @@ if os.path.exists(statefile):
 else:
     state = {}
 
-NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
-      "OPF": "http://www.idpf.org/2007/opf",
-      "CONT": "urn:oasis:names:tc:opendocument:xmlns:container",
-      "XHTML": "http://www.w3.org/1999/xhtml",
-      "EPUB": "http://www.idpf.org/2007/ops"}
 
 LINEPRSRV = 0  # default = 2
-
 SEARCHPATTERN = None
-
 VWR_LIST = [
     "feh",
     "gnome-open",
@@ -120,21 +117,42 @@ else:
             VWR = i
             break
 
+
 class Epub:
+    NS = {
+        "DAISY": "http://www.daisy.org/z3986/2005/ncx/",
+        "OPF": "http://www.idpf.org/2007/opf",
+        "CONT": "urn:oasis:names:tc:opendocument:xmlns:container",
+        "XHTML": "http://www.w3.org/1999/xhtml",
+        "EPUB": "http://www.idpf.org/2007/ops"
+    }
+
     def __init__(self, fileepub):
         self.path = os.path.abspath(fileepub)
         self.file = zipfile.ZipFile(fileepub, "r")
         cont = ET.parse(self.file.open("META-INF/container.xml"))
-        self.rootfile = cont.find("CONT:rootfiles/CONT:rootfile", NS).attrib["full-path"]
-        self.rootdir = os.path.dirname(self.rootfile) + "/" if os.path.dirname(self.rootfile) != "" else ""
+        self.rootfile = cont.find(
+            "CONT:rootfiles/CONT:rootfile",
+            self.NS
+        ).attrib["full-path"]
+        self.rootdir = os.path.dirname(self.rootfile)\
+            + "/" if os.path.dirname(self.rootfile) != "" else ""
         cont = ET.parse(self.file.open(self.rootfile))
         # EPUB3
         self.version = cont.getroot().get("version")
         if self.version == "2.0":
-            # self.toc = self.rootdir + cont.find("OPF:manifest/*[@id='ncx']", NS).get("href")
-            self.toc = self.rootdir + cont.find("OPF:manifest/*[@media-type='application/x-dtbncx+xml']", NS).get("href")
+            # "OPF:manifest/*[@id='ncx']"
+            self.toc = self.rootdir\
+                + cont.find(
+                    "OPF:manifest/*[@media-type='application/x-dtbncx+xml']",
+                    self.NS
+                ).get("href")
         elif self.version == "3.0":
-            self.toc = self.rootdir + cont.find("OPF:manifest/*[@properties='nav']", NS).get("href")
+            self.toc = self.rootdir\
+                + cont.find(
+                    "OPF:manifest/*[@properties='nav']",
+                    self.NS
+                ).get("href")
 
         self.contents = []
         self.toc_entries = [[], [], []]
@@ -143,7 +161,7 @@ class Epub:
         meta = []
         # why self.file.read(self.rootfile) problematic
         cont = ET.fromstring(self.file.open(self.rootfile).read())
-        for i in cont.findall("OPF:metadata/*", NS):
+        for i in cont.findall("OPF:metadata/*", self.NS):
             if i.text is not None:
                 meta.append([re.sub("{.*?}", "", i.tag), i.text])
         return meta
@@ -151,17 +169,18 @@ class Epub:
     def initialize(self):
         cont = ET.parse(self.file.open(self.rootfile)).getroot()
         manifest = []
-        for i in cont.findall("OPF:manifest/*", NS):
+        for i in cont.findall("OPF:manifest/*", self.NS):
             # EPUB3
             # if i.get("id") != "ncx" and i.get("properties") != "nav":
-            if i.get("media-type") != "application/x-dtbncx+xml" and i.get("properties") != "nav":
+            if i.get("media-type") != "application/x-dtbncx+xml"\
+               and i.get("properties") != "nav":
                 manifest.append([
                     i.get("id"),
                     i.get("href")
                 ])
 
         spine, contents = [], []
-        for i in cont.findall("OPF:spine/*", NS):
+        for i in cont.findall("OPF:spine/*", self.NS):
             spine.append(i.get("idref"))
         for i in spine:
             for j in manifest:
@@ -175,13 +194,16 @@ class Epub:
         toc = ET.parse(self.file.open(self.toc)).getroot()
         # EPUB3
         if self.version == "2.0":
-            navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
+            navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", self.NS)
         elif self.version == "3.0":
-            navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
+            navPoints = toc.findall(
+                "XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a",
+                self.NS
+            )
         for i in navPoints:
             if self.version == "2.0":
-                src = i.find("DAISY:content", NS).get("src")
-                name = i.find("DAISY:navLabel/DAISY:text", NS).text
+                src = i.find("DAISY:content", self.NS).get("src")
+                name = i.find("DAISY:navLabel/DAISY:text", self.NS).text
             elif self.version == "3.0":
                 src = i.get("href")
                 name = "".join(list(i.itertext()))
@@ -193,6 +215,7 @@ class Epub:
                 self.toc_entries[2].append(src[1])
             elif len(src) == 1:
                 self.toc_entries[2].append("")
+
 
 class HTMLtoLines(HTMLParser):
     para = {"p", "div"}
@@ -242,7 +265,8 @@ class HTMLtoLines(HTMLParser):
             self.text += [""]
         elif tag in {"img", "image"}:
             for i in attrs:
-                if (tag == "img" and i[0] == "src") or (tag == "image" and i[0] == "xlink:href"):
+                if (tag == "img" and i[0] == "src")\
+                   or (tag == "image" and i[0] == "xlink:href"):
                     self.text.append("[IMG:{}]".format(len(self.imgs)))
                     self.imgs.append(unquote(i[1]))
                     self.text.append("")
@@ -296,15 +320,20 @@ class HTMLtoLines(HTMLParser):
             if n in self.idhead:
                 text += [i.rjust(width//2 + len(i)//2)] + [""]
             elif n in self.idinde:
-                text += ["   "+j for j in textwrap.fill(i, width - 3).splitlines()] + [""]
+                text += [
+                    "   "+j for j in textwrap.fill(i, width - 3).splitlines()
+                ] + [""]
             elif n in self.idbull:
                 tmp = textwrap.fill(i, width - 3).splitlines()
-                text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
+                text += [
+                    " - "+j if j == tmp[0] else "   "+j for j in tmp
+                ] + [""]
             else:
                 text += textwrap.fill(i, width).splitlines() + [""]
         return text, self.imgs, sect
 
-def savestate(file, index, width, pos, pctg ):
+
+def savestate(file, index, width, pos, pctg):
     for i in state:
         state[i]["lastread"] = str(0)
     state[file]["lastread"] = str(1)
@@ -315,11 +344,13 @@ def savestate(file, index, width, pos, pctg ):
     with open(statefile, "w") as f:
         json.dump(state, f, indent=4)
 
+
 def pgup(pos, winhi, preservedline=0):
     if pos >= winhi - preservedline:
         return pos - winhi + preservedline
     else:
         return 0
+
 
 def pgdn(pos, tot, winhi, preservedline=0):
     if pos + winhi <= tot - winhi:
@@ -330,34 +361,34 @@ def pgdn(pos, tot, winhi, preservedline=0):
             return 0
         return pos
 
+
 def pgend(tot, winhi):
     if tot - winhi >= 0:
         return tot - winhi
     else:
         return 0
 
+
 def toc(stdscr, src, index, width):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
     Y, X = 2, 2
-    oldindex = index
     toc = curses.newwin(hi, wi, Y, X)
     toc.box()
     toc.keypad(True)
-    toc.addstr(1,2, "Table of Contents")
-    toc.addstr(2,2, "-----------------")
+    toc.addstr(1, 2, "Table of Contents")
+    toc.addstr(2, 2, "-----------------")
     key_toc = 0
 
     totlines = len(src)
     toc.refresh()
-    pad = curses.newpad(totlines, wi - 2 )
+    pad = curses.newpad(totlines, wi - 2)
     pad.keypad(True)
 
     padhi = rows - 5 - Y - 4 + 1
     y = 0
     if index in range(padhi//2, totlines - padhi//2):
         y = index - padhi//2 + 1
-    d = len(str(totlines))
     span = []
 
     for n, i in enumerate(src):
@@ -401,12 +432,13 @@ def toc(stdscr, src, index, width):
             pad.addstr(n, 0, pre)
             pad.chgat(n, 0, span[n], att)
 
-        pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
+        pad.refresh(y, 0, Y+4, X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
 
     toc.clear()
     toc.refresh()
     return
+
 
 def meta(stdscr, ebook):
     rows, cols = stdscr.getmaxyx()
@@ -415,8 +447,8 @@ def meta(stdscr, ebook):
     meta = curses.newwin(hi, wi, Y, X)
     meta.box()
     meta.keypad(True)
-    meta.addstr(1,2, "Metadata")
-    meta.addstr(2,2, "--------")
+    meta.addstr(1, 2, "Metadata")
+    meta.addstr(2, 2, "--------")
     key_meta = 0
 
     mdata = []
@@ -427,13 +459,13 @@ def meta(stdscr, ebook):
     src_lines = mdata
     totlines = len(src_lines)
 
-    pad = curses.newpad(totlines, wi - 2 )
+    pad = curses.newpad(totlines, wi - 2)
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         pad.addstr(n, 0, i)
     y = 0
     meta.refresh()
-    pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
+    pad.refresh(y, 0, Y+4, X+4, rows - 5, cols - 6)
 
     padhi = rows - 5 - Y - 4 + 1
 
@@ -452,12 +484,13 @@ def meta(stdscr, ebook):
             y = pgend(totlines, padhi)
         elif key_meta == curses.KEY_RESIZE:
             return key_meta
-        pad.refresh(y,0, 6,5, rows - 5, cols - 5)
+        pad.refresh(y, 0, 6, 5, rows - 5, cols - 5)
         key_meta = meta.getch()
 
     meta.clear()
     meta.refresh()
     return
+
 
 def help(stdscr):
     rows, cols = stdscr.getmaxyx()
@@ -466,21 +499,21 @@ def help(stdscr):
     help = curses.newwin(hi, wi, Y, X)
     help.box()
     help.keypad(True)
-    help.addstr(1,2, "Help")
-    help.addstr(2,2, "----")
+    help.addstr(1, 2, "Help")
+    help.addstr(2, 2, "----")
     key_help = 0
 
     src = re.search("Key Bind(\n|.)*", __doc__).group()
     src_lines = src.splitlines()
     totlines = len(src_lines)
 
-    pad = curses.newpad(totlines, wi - 2 )
+    pad = curses.newpad(totlines, wi - 2)
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         pad.addstr(n, 0, i)
     y = 0
     help.refresh()
-    pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
+    pad.refresh(y, 0, Y+4, X+4, rows - 5, cols - 6)
 
     padhi = rows - 5 - Y - 4 + 1
 
@@ -499,12 +532,13 @@ def help(stdscr):
             y = pgend(totlines, padhi)
         elif key_help == curses.KEY_RESIZE:
             return key_help
-        pad.refresh(y,0, 6,5, rows - 5, cols - 5)
+        pad.refresh(y, 0, 6, 5, rows - 5, cols - 5)
         key_help = help.getch()
 
     help.clear()
     help.refresh()
     return
+
 
 def dots_path(curr, tofi):
     candir = curr.split("/")
@@ -519,17 +553,19 @@ def dots_path(curr, tofi):
         pass
     return "/".join(candir+tofi)
 
+
 def open_media(scr, epub, src):
     sfx = os.path.splitext(src)[1]
     fd, path = tempfile.mkstemp(suffix=sfx)
     try:
         with os.fdopen(fd, "wb") as tmp:
             tmp.write(epub.file.read(src))
-        run(VWR +" "+ path, shell=True)
+        run(VWR + " " + path, shell=True)
         k = scr.getch()
     finally:
         os.remove(path)
     return k
+
 
 def searching(stdscr, pad, src, width, y, ch, tot):
     global SEARCHPATTERN
@@ -604,14 +640,18 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                 elif s == ord("n") and ch == 0:
                     SEARCHPATTERN = "/"+SEARCHPATTERN[1:]
                     return 1
-                elif s == ord("N") and ch +1 == tot:
+                elif s == ord("N") and ch + 1 == tot:
                     SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
                     return -1
 
                 stdscr.clear()
-                stdscr.addstr(rows-1, 0, " Finished searching: " + SEARCHPATTERN[1:] + " ", curses.A_REVERSE)
+                stdscr.addstr(
+                    rows-1, 0,
+                    " Finished searching: " + SEARCHPATTERN[1:] + " ",
+                    curses.A_REVERSE
+                )
                 stdscr.refresh()
-                pad.refresh(y,0, 0,x, rows-2,x+width)
+                pad.refresh(y, 0, 0, x, rows-2, x+width)
                 s = pad.getch()
 
     sidx = len(found) - 1
@@ -624,10 +664,13 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                 break
 
     s = 0
-    msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
-        sidx + 1,
-        len(found),
-        ch+1, tot)
+    msg = " Searching: "\
+        + SEARCHPATTERN[1:]\
+        + " --- Res {}/{} Ch {}/{} ".format(
+            sidx + 1,
+            len(found),
+            ch+1, tot
+        )
     while True:
         if s in QUIT:
             SEARCHPATTERN = None
@@ -647,10 +690,13 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                     continue
             else:
                 sidx += 1
-                msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
-                    sidx + 1,
-                    len(found),
-                    ch+1, tot)
+                msg = " Searching: "\
+                    + SEARCHPATTERN[1:]\
+                    + " --- Res {}/{} Ch {}/{} ".format(
+                        sidx + 1,
+                        len(found),
+                        ch+1, tot
+                    )
         elif s == ord("N"):
             SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
             if sidx == 0:
@@ -662,10 +708,13 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                     continue
             else:
                 sidx -= 1
-                msg = " Searching: " + SEARCHPATTERN[1:] + " --- Res {}/{} Ch {}/{} ".format(
-                    sidx + 1,
-                    len(found),
-                    ch+1, tot)
+                msg = " Searching: "\
+                    + SEARCHPATTERN[1:]\
+                    + " --- Res {}/{} Ch {}/{} ".format(
+                        sidx + 1,
+                        len(found),
+                        ch+1, tot
+                    )
         elif s == curses.KEY_RESIZE:
             return s
 
@@ -684,8 +733,9 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         stdscr.clear()
         stdscr.addstr(rows-1, 0, msg, curses.A_REVERSE)
         stdscr.refresh()
-        pad.refresh(y,0, 0,x, rows-2,x+width)
+        pad.refresh(y, 0, 0, x, rows-2, x+width)
         s = pad.getch()
+
 
 def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
     ntoc = 0
@@ -697,13 +747,16 @@ def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
             break
     return ntoc
 
+
 def reader(stdscr, ebook, index, width, y, pctg, sect):
     k = 0 if SEARCHPATTERN is None else ord("/")
     rows, cols = stdscr.getmaxyx()
     x = (cols - width) // 2
 
     contents = ebook.contents
-    toc_name, toc_idx, toc_sect = ebook.toc_entries[0], ebook.toc_entries[1], ebook.toc_entries[2]
+    toc_name = ebook.toc_entries[0]
+    toc_idx = ebook.toc_entries[1]
+    toc_sect = ebook.toc_entries[2]
     toc_secid = {}
     chpath = contents[index]
     content = ebook.file.open(chpath).read()
@@ -711,11 +764,11 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
 
     parser = HTMLtoLines(set(toc_sect))
     # parser = HTMLtoLines()
-    try:
-        parser.feed(content)
-        parser.close()
-    except:
-        pass
+    # try:
+    parser.feed(content)
+    parser.close()
+    # except:
+    #     pass
 
     src_lines, imgs, toc_secid = parser.get_lines(width)
     totlines = len(src_lines)
@@ -727,17 +780,17 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
     else:
         y = y % totlines
 
-    pad = curses.newpad(totlines, width + 2) # + 2 unnecessary
+    pad = curses.newpad(totlines, width + 2)  # + 2 unnecessary
     pad.keypad(True)
     for n, i in enumerate(src_lines):
-        if re.search("\[IMG:[0-9]+\]", i):
+        if re.search("\\[IMG:[0-9]+\\]", i):
             pad.addstr(n, width//2 - len(i)//2, i, curses.A_REVERSE)
         else:
             pad.addstr(n, 0, i)
 
     stdscr.clear()
     stdscr.refresh()
-    pad.refresh(y,0, 0,x, rows-1,x+width)
+    pad.refresh(y, 0, 0, x, rows-1, x+width)
 
     if sect != "":
         y = toc_secid.get(sect, 0)
@@ -792,7 +845,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
         elif k in CH_END:
             ntoc = find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y)
             try:
-                if toc_secid[toc_sect[ntoc+1]] - rows >=0:
+                if toc_secid[toc_sect[ntoc+1]] - rows >= 0:
                     y = toc_secid[toc_sect[ntoc+1]] - rows
                 else:
                     y = toc_secid[toc_sect[ntoc]]
@@ -832,7 +885,12 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
             else:
                 return 0, cols - 2, 0, y/totlines, ""
         elif k == ord("/"):
-            fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
+            fs = searching(
+                stdscr, pad,
+                src_lines,
+                width, y,
+                index, len(contents)
+            )
             if fs == curses.KEY_RESIZE:
                 k = fs
                 continue
@@ -843,7 +901,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
         elif k == ord("o") and VWR is not None:
             gambar, idx = [], []
             for n, i in enumerate(src_lines[y:y+rows]):
-                img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
+                img = re.search("(?<=\\[IMG:)[0-9]+(?=\\])", i)
                 if img is not None:
                     gambar.append(img.group())
                     idx.append(n)
@@ -891,12 +949,13 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
             stdscr.clear()
             stdscr.refresh()
             if totlines - y < rows:
-                pad.refresh(y,0, 0,x, totlines-y,x+width)
+                pad.refresh(y, 0, 0, x, totlines-y, x+width)
             else:
-                pad.refresh(y,0, 0,x, rows-1,x+width)
+                pad.refresh(y, 0, 0, x, rows-1, x+width)
         except curses.error:
             pass
         k = pad.getch()
+
 
 def preread(stdscr, file):
     curses.use_default_colors()
@@ -904,7 +963,7 @@ def preread(stdscr, file):
     curses.curs_set(0)
     stdscr.clear()
     rows, cols = stdscr.getmaxyx()
-    stdscr.addstr(rows-1,0, "Loading...")
+    stdscr.addstr(rows-1, 0, "Loading...")
     stdscr.refresh()
 
     epub = Epub(file)
@@ -930,8 +989,11 @@ def preread(stdscr, file):
 
     sec = ""
     while True:
-        incr, width, y, pctg, sec = reader(stdscr, epub, idx, width, y, pctg, sec)
+        incr, width, y, pctg, sec = reader(
+            stdscr, epub, idx, width, y, pctg, sec
+        )
         idx += incr
+
 
 def main():
     args = []
@@ -983,7 +1045,11 @@ def main():
             if not os.path.exists(i):
                 todel.append(i)
             else:
-                match_val = sum([j.size for j in SM(None, i.lower(), " ".join(args).lower()).get_matching_blocks()])
+                match_val = sum([
+                    j.size for j in SM(
+                        None, i.lower(), " ".join(args).lower()
+                    ).get_matching_blocks()
+                ])
                 if match_val >= val:
                     val = match_val
                     cand = i
@@ -1003,7 +1069,8 @@ def main():
             print("\nReading history:")
             dig = len(str(len(state.keys())+1))
             for n, i in enumerate(state.keys()):
-                print(str(n+1).rjust(dig) + ("* " if state[i]["lastread"] == "1" else "  ") + i)
+                print(str(n+1).rjust(dig)
+                      + ("* " if state[i]["lastread"] == "1" else "  ") + i)
             if len({"-r"} & set(args)) != 0:
                 sys.exit()
             else:
@@ -1017,11 +1084,11 @@ def main():
             content = epub.file.open(i).read()
             content = content.decode("utf-8")
             parser = HTMLtoLines()
-            try:
-                parser.feed(content)
-                parser.close()
-            except:
-                pass
+            # try:
+            parser.feed(content)
+            parser.close()
+            # except:
+            #     pass
             src_lines = parser.get_lines()
             # sys.stdout.reconfigure(encoding="utf-8")  # Python>=3.7
             for j in src_lines:
@@ -1030,6 +1097,7 @@ def main():
 
     else:
         curses.wrapper(preread, file)
+
 
 if __name__ == "__main__":
     main()
