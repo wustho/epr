@@ -36,7 +36,7 @@ Key Binding:
 """
 
 
-__version__ = "2.2.11b"
+__version__ = "2.3.0b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -77,47 +77,12 @@ QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
 
 
-if os.getenv("HOME") is not None:
-    statefile = os.path.join(os.getenv("HOME"), ".epr")
-    if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
-        configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
-        os.makedirs(configdir, exist_ok=True)
-        if os.path.isfile(statefile):
-            if os.path.isfile(os.path.join(configdir, "config")):
-                os.remove(os.path.join(configdir, "config"))
-            shutil.move(statefile, os.path.join(configdir, "config"))
-        statefile = os.path.join(configdir, "config")
-elif os.getenv("USERPROFILE") is not None:
-    statefile = os.path.join(os.getenv("USERPROFILE"), ".epr")
-else:
-    statefile = os.devnull
-
-if os.path.exists(statefile):
-    with open(statefile, "r") as f:
-        state = json.load(f)
-else:
-    state = {}
-
-
-LINEPRSRV = 0  # default = 2
+STATEFILE = ""
+STATE = {}
+LINEPRSRV = 0  # 2
 SEARCHPATTERN = None
 LOCALSTATESAVING = False
-VWR_LIST = [
-    "feh",
-    "gnome-open",
-    "gvfs-open",
-    "xdg-open",
-    "kde-open",
-    "firefox"
-]
 VWR = None
-if sys.platform == "win32":
-    VWR = "start"
-else:
-    for i in VWR_LIST:
-        if shutil.which(i) is not None:
-            VWR = i
-            break
 
 
 class Epub:
@@ -335,6 +300,28 @@ class HTMLtoLines(HTMLParser):
         return text, self.imgs, sect
 
 
+def loadstate():
+    global STATE, STATEFILE
+    if os.getenv("HOME") is not None:
+        STATEFILE = os.path.join(os.getenv("HOME"), ".epr")
+        if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
+            configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
+            os.makedirs(configdir, exist_ok=True)
+            if os.path.isfile(STATEFILE):
+                if os.path.isfile(os.path.join(configdir, "config")):
+                    os.remove(os.path.join(configdir, "config"))
+                shutil.move(STATEFILE, os.path.join(configdir, "config"))
+            STATEFILE = os.path.join(configdir, "config")
+    elif os.getenv("USERPROFILE") is not None:
+        STATEFILE = os.path.join(os.getenv("USERPROFILE"), ".epr")
+    else:
+        STATEFILE = os.devnull
+
+    if os.path.exists(STATEFILE):
+        with open(STATEFILE, "r") as f:
+            STATE = json.load(f)
+
+
 def savestate(file, index, width, pos, pctg):
     localstatefile = os.path.splitext(file)[0] + ".epr"
     if os.path.isfile(localstatefile) or LOCALSTATESAVING:
@@ -347,15 +334,15 @@ def savestate(file, index, width, pos, pctg):
         with open(localstatefile, "w") as f:
             json.dump(local_state, f, indent=4)
 
-    for i in state:
-        state[i]["lastread"] = str(0)
-    state[file]["lastread"] = str(1)
-    state[file]["index"] = str(index)
-    state[file]["width"] = str(width)
-    state[file]["pos"] = str(pos)
-    state[file]["pctg"] = str(pctg)
-    with open(statefile, "w") as f:
-        json.dump(state, f, indent=4)
+    for i in STATE:
+        STATE[i]["lastread"] = str(0)
+    STATE[file]["lastread"] = str(1)
+    STATE[file]["index"] = str(index)
+    STATE[file]["width"] = str(width)
+    STATE[file]["pos"] = str(pos)
+    STATE[file]["pctg"] = str(pctg)
+    with open(STATEFILE, "w") as f:
+        json.dump(STATE, f, indent=4)
 
 
 def pgup(pos, winhi, preservedline=0):
@@ -565,6 +552,25 @@ def dots_path(curr, tofi):
     except ValueError:
         pass
     return "/".join(candir+tofi)
+
+
+def find_media_viewer():
+    global VWR
+    VWR_LIST = [
+        "feh",
+        "gnome-open",
+        "gvfs-open",
+        "xdg-open",
+        "kde-open",
+        "firefox"
+    ]
+    if sys.platform == "win32":
+        VWR = "start"
+    else:
+        for i in VWR_LIST:
+            if shutil.which(i) is not None:
+                VWR = i
+                break
 
 
 def open_media(scr, epub, src):
@@ -992,13 +998,13 @@ def preread(stdscr, file):
             width = cols - 2
             pctg = float(local_state["pctg"])
     except (FileNotFoundError, json.decoder.JSONDecodeError):
-        if epub.path in state:
-            idx = int(state[epub.path]["index"])
-            width = int(state[epub.path]["width"])
-            y = int(state[epub.path]["pos"])
+        if epub.path in STATE:
+            idx = int(STATE[epub.path]["index"])
+            width = int(STATE[epub.path]["width"])
+            y = int(STATE[epub.path]["pos"])
             pctg = None
         else:
-            state[epub.path] = {}
+            STATE[epub.path] = {}
             idx = 0
             y = 0
             width = 80
@@ -1006,10 +1012,11 @@ def preread(stdscr, file):
 
         if cols <= width:
             width = cols - 2
-            if "pctg" in state[epub.path]:
-                pctg = float(state[epub.path]["pctg"])
+            if "pctg" in STATE[epub.path]:
+                pctg = float(STATE[epub.path]["pctg"])
 
     epub.initialize()
+    find_media_viewer()
 
     sec = ""
     while True:
@@ -1050,16 +1057,18 @@ def main():
         args.remove("-l")
         LOCALSTATESAVING = True
 
+    loadstate()
+
     if args == []:
         file, todel = False, []
-        for i in state:
+        for i in STATE:
             if not os.path.exists(i):
                 todel.append(i)
-            elif state[i]["lastread"] == str(1):
+            elif STATE[i]["lastread"] == str(1):
                 file = i
 
         for i in todel:
-            del state[i]
+            del STATE[i]
 
         if not file:
             print(__doc__)
@@ -1071,7 +1080,7 @@ def main():
     else:
         val = cand = 0
         todel = []
-        for i in state.keys():
+        for i in STATE.keys():
             if not os.path.exists(i):
                 todel.append(i)
             else:
@@ -1084,12 +1093,12 @@ def main():
                     val = match_val
                     cand = i
         for i in todel:
-            del state[i]
-        with open(statefile, "w") as f:
-            json.dump(state, f, indent=4)
+            del STATE[i]
+        with open(STATEFILE, "w") as f:
+            json.dump(STATE, f, indent=4)
         if len(args) == 1 and re.match(r"[0-9]+", args[0]) is not None:
             try:
-                cand = list(state.keys())[int(args[0])-1]
+                cand = list(STATE.keys())[int(args[0])-1]
                 val = 1
             except IndexError:
                 val = 0
@@ -1097,10 +1106,10 @@ def main():
             file = cand
         else:
             print("\nReading history:")
-            dig = len(str(len(state.keys())+1))
-            for n, i in enumerate(state.keys()):
+            dig = len(str(len(STATE.keys())+1))
+            for n, i in enumerate(STATE.keys()):
                 print(str(n+1).rjust(dig)
-                      + ("* " if state[i]["lastread"] == "1" else "  ") + i)
+                      + ("* " if STATE[i]["lastread"] == "1" else "  ") + i)
             if len({"-r"} & set(args)) != 0:
                 sys.exit()
             else:
