@@ -10,6 +10,7 @@ Usages:
 Options:
     -r              print reading history
     -d              dump epub
+    -l              save state locally
     -h, --help      print short, long help
 
 Key Binding:
@@ -100,6 +101,7 @@ else:
 
 LINEPRSRV = 0  # default = 2
 SEARCHPATTERN = None
+LOCALSTATESAVING = False
 VWR_LIST = [
     "feh",
     "gnome-open",
@@ -334,6 +336,17 @@ class HTMLtoLines(HTMLParser):
 
 
 def savestate(file, index, width, pos, pctg):
+    localstatefile = os.path.splitext(file)[0] + ".epr"
+    if os.path.isfile(localstatefile) or LOCALSTATESAVING:
+        local_state = {
+            "index": str(index),
+            "width": str(width),
+            "pos": str(pos),
+            "pctg": str(pctg)
+        }
+        with open(localstatefile, "w") as f:
+            json.dump(local_state, f, indent=4)
+
     for i in state:
         state[i]["lastread"] = str(0)
     state[file]["lastread"] = str(1)
@@ -968,22 +981,33 @@ def preread(stdscr, file):
 
     epub = Epub(file)
 
-    if epub.path in state:
-        idx = int(state[epub.path]["index"])
-        width = int(state[epub.path]["width"])
-        y = int(state[epub.path]["pos"])
+    try:
+        with open(os.path.splitext(epub.path)[0]+".epr") as f:
+            local_state = json.load(f)
+        idx = int(local_state["index"])
+        width = int(local_state["width"])
+        y = int(local_state["pos"])
         pctg = None
-    else:
-        state[epub.path] = {}
-        idx = 0
-        y = 0
-        width = 80
-        pctg = None
+        if cols <= width:
+            width = cols - 2
+            pctg = float(local_state["pctg"])
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        if epub.path in state:
+            idx = int(state[epub.path]["index"])
+            width = int(state[epub.path]["width"])
+            y = int(state[epub.path]["pos"])
+            pctg = None
+        else:
+            state[epub.path] = {}
+            idx = 0
+            y = 0
+            width = 80
+            pctg = None
 
-    if cols <= width:
-        width = cols - 2
-        if "pctg" in state[epub.path]:
-            pctg = float(state[epub.path]["pctg"])
+        if cols <= width:
+            width = cols - 2
+            if "pctg" in state[epub.path]:
+                pctg = float(state[epub.path]["pctg"])
 
     epub.initialize()
 
@@ -996,6 +1020,8 @@ def preread(stdscr, file):
 
 
 def main():
+    global LOCALSTATESAVING
+
     args = []
     if sys.argv[1:] != []:
         args += sys.argv[1:]
@@ -1019,6 +1045,10 @@ def main():
         dump = True
     else:
         dump = False
+
+    if len({"-l"} & set(args)) != 0:
+        args.remove("-l")
+        LOCALSTATESAVING = True
 
     if args == []:
         file, todel = False, []
