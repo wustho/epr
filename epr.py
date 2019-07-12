@@ -27,9 +27,10 @@ Key Binding:
     Search          : /
     Next Occurence  : n
     Prev Occurence  : N
+    Toggle width    : =
+    Set width       : [count]=
     Shrink          : -
-    Enlarge         : =
-    Toggle width    : 0
+    Enlarge         : +
     ToC             : TAB       t
     Metadata        : m
 """
@@ -65,7 +66,8 @@ CH_PREV = {ord("p")}
 CH_HOME = {curses.KEY_HOME, ord("g")}
 CH_END = {curses.KEY_END, ord("G")}
 SHRINK = ord("-")
-WIDEN = ord("=")
+WIDEN = ord("+")
+WIDTH = ord("=")
 META = ord("m")
 TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
@@ -306,15 +308,15 @@ def savestate(file, index, width, pos, pctg ):
     with open(statefile, "w") as f:
         json.dump(state, f, indent=4)
 
-def pgup(pos, winhi, preservedline=0):
-    if pos >= winhi - preservedline:
-        return pos - winhi + preservedline
+def pgup(pos, winhi, preservedline=0, c=1):
+    if pos >= (winhi - preservedline) * c:
+        return pos - (winhi - preservedline) * c
     else:
         return 0
 
-def pgdn(pos, tot, winhi, preservedline=0):
-    if pos + winhi <= tot - winhi:
-        return pos + winhi
+def pgdn(pos, tot, winhi, preservedline=0,c=1):
+    if pos + (winhi * c) <= tot - winhi:
+        return pos + (winhi * c)
     else:
         pos = tot - winhi
         if pos < 0:
@@ -358,29 +360,42 @@ def toc(stdscr, src, index, width):
         pad.addstr(n, 0, strs)
         span.append(len(strs))
 
+    countstring = ""
     while key_toc not in TOC and key_toc not in QUIT:
-        if key_toc in SCROLL_UP and index > 0:
-            index -= 1
-        elif key_toc in SCROLL_DOWN and index + 1 < totlines:
-            index += 1
-        elif key_toc in FOLLOW:
-            if index == oldindex:
-                break
-            return index
-        elif key_toc in PAGE_UP:
-            index -= 3
-            if index < 0:
+        if countstring == "":
+            count = 1
+        else:
+            count = int(countstring)
+        if key_toc in range(48, 57): # i.e., k is a numeral
+            countstring = countstring + chr(key_toc)
+        else:
+            if key_toc in SCROLL_UP or key_toc in PAGE_UP:
+                index -= count
+                if index < 0:
+                    index = 0
+            elif key_toc in SCROLL_DOWN or key_toc in PAGE_DOWN:
+                index += count 
+                if index + 1 >= totlines:
+                    index = totlines - 1
+            elif key_toc in FOLLOW:
+                if index == oldindex:
+                    break
+                return index
+            # elif key_toc in PAGE_UP:
+            #     index -= 3
+            #     if index < 0:
+            #         index = 0
+            # elif key_toc in PAGE_DOWN:
+            #     index += 3
+            #     if index >= totlines:
+            #         index = totlines - 1
+            elif key_toc in CH_HOME:
                 index = 0
-        elif key_toc in PAGE_DOWN:
-            index += 3
-            if index >= totlines:
+            elif key_toc in CH_END:
                 index = totlines - 1
-        elif key_toc in CH_HOME:
-            index = 0
-        elif key_toc in CH_END:
-            index = totlines - 1
-        elif key_toc == curses.KEY_RESIZE:
-            return key_toc
+            elif key_toc == curses.KEY_RESIZE:
+                return key_toc
+            countstring = ""
 
         while index not in range(y, y+padhi):
             if index < y:
@@ -727,119 +742,152 @@ def reader(stdscr, ebook, index, width, y, pctg):
     stdscr.refresh()
     pad.refresh(y,0, 0,x, rows-1,x+width)
 
+    countstring = ""
     while True:
-        if k in QUIT:
-            savestate(ebook.path, index, width, y, y/totlines)
-            sys.exit()
-        elif k in SCROLL_UP:
-            if y > 0:
-                y -= 1
-            elif index != 0:
-                return -1, width, -rows, None
-        elif k in PAGE_UP:
-            if y == 0 and index != 0:
-                return -1, width, -rows, None
-            else:
-                y = pgup(y, rows, LINEPRSRV)
-        elif k in SCROLL_DOWN:
-            if y < totlines - rows:
-                y += 1
-            elif index != len(contents)-1:
-                return 1, width, 0, None
-        elif k in PAGE_DOWN:
-            if totlines - y - LINEPRSRV > rows:
-                y += rows - LINEPRSRV
-            elif index != len(contents)-1:
-                return 1, width, 0, None
-        elif k in CH_NEXT and index < len(contents) - 1:
-            return 1, width, 0, None
-        elif k in CH_PREV and index > 0:
-            return -1, width, 0, None
-        elif k in CH_HOME:
-            y = 0
-        elif k in CH_END:
-            y = pgend(totlines, rows)
-        elif k in TOC:
-            fllwd = toc(stdscr, toc_src, index, width)
-            if fllwd is not None:
-                if fllwd == curses.KEY_RESIZE:
-                    k = fllwd
+        if countstring == "":
+            count = 1
+        else:
+            count = int(countstring)
+        if k in range(48, 57): # i.e., k is a numeral
+            countstring = countstring + chr(k)
+        else:
+            if k in QUIT:
+                savestate(ebook.path, index, width, y, y/totlines)
+                sys.exit()
+            elif k in SCROLL_UP:
+                if y >= count:
+                    y -= count
+                elif index != 0:
+                    return -1, width, -rows, None
+            elif k in PAGE_UP:
+                if y == 0 and index != 0:
+                    return -1, width, -rows, None
+                else:
+                    y = pgup(y, rows, LINEPRSRV, count)
+            elif k in SCROLL_DOWN:
+                if y + count < totlines - rows:
+                    y += count
+                elif index != len(contents)-1:
+                    return 1, width, 0, None
+            elif k in PAGE_DOWN:
+                if totlines - y - LINEPRSRV > rows:
+                    y = pgdn(y, totlines, rows, LINEPRSRV, count)
+                elif index != len(contents)-1:
+                    return 1, width, 0, None
+            elif k in CH_NEXT:
+                if index + count < len(contents) - 1:
+                    return count, width, 0, None
+                if index + count >= len(contents) - 1:
+                    return len(contents) - index - 1, width, 0, None
+            elif k in CH_PREV:
+                if index - count > 0:
+                   return -count, width, 0, None
+                elif index - count <= 0:
+                   return -index, width, 0, None
+            elif k in CH_HOME:
+                y = 0
+            elif k in CH_END:
+                y = pgend(totlines, rows)
+            elif k in TOC:
+                fllwd = toc(stdscr, toc_src, index, width)
+                if fllwd is not None:
+                    if fllwd == curses.KEY_RESIZE:
+                        k = fllwd
+                        continue
+                    return fllwd - index, width, 0, None
+            elif k == META:
+                k = meta(stdscr, ebook)
+                if k == curses.KEY_RESIZE:
                     continue
-                return fllwd - index, width, 0, None
-        elif k == META:
-            k = meta(stdscr, ebook)
-            if k == curses.KEY_RESIZE:
-                continue
-        elif k in HELP:
-            k = help(stdscr)
-            if k == curses.KEY_RESIZE:
-                continue
-        elif k == WIDEN and (width + 2) < cols:
-            width += 2
-            return 0, width, 0, y/totlines
-        elif k == SHRINK and width >= 22:
-            width -= 2
-            return 0, width, 0, y/totlines
-        elif k == ord("0"):
-            if width != 80 and cols - 2 >= 80:
-                return 0, 80, 0, y/totlines
-            else:
-                return 0, cols - 2, 0, y/totlines
-        elif k == ord("/"):
-            fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
-            if fs == curses.KEY_RESIZE:
-                k = fs
-                continue
-            elif SEARCHPATTERN is not None:
-                return fs, width, 0, None
-            else:
-                y = fs
-        elif k == ord("o") and VWR is not None:
-            gambar, idx = [], []
-            for n, i in enumerate(src_lines[y:y+rows]):
-                img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
-                if img is not None:
-                    gambar.append(img.group())
-                    idx.append(n)
+            elif k in HELP:
+                k = help(stdscr)
+                if k == curses.KEY_RESIZE:
+                    continue
+            elif k == WIDEN:
+                width += count 
+                if width >= cols - 2:
+                    width = cols - 2
+                return 0, width, 0, y/totlines
+            elif k == SHRINK:
+                width -= count 
+                if width < 20:
+                    width = 20
+                return 0, width, 0, y/totlines
+            elif k == WIDTH:
+                if countstring == "": 
+                    # if called without a count, toggle between 80 cols and full width
+                    if width != 80 and cols - 2 >= 80:
+                        return 0, 80, 0, y/totlines
+                    else:
+                        return 0, cols - 2, 0, y/totlines
+                else:
+                    width = count
+                if width < 20:
+                    width = 20
+                elif width >= cols -2:
+                    width = cols - 2
+                return 0, width, 0, y/totlines
+            # elif k == ord("0"):
+            #     if width != 80 and cols - 2 >= 80:
+            #         return 0, 80, 0, y/totlines
+            #     else:
+            #         return 0, cols - 2, 0, y/totlines
+            elif k == ord("/"):
+                fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
+                if fs == curses.KEY_RESIZE:
+                    k = fs
+                    continue
+                elif SEARCHPATTERN is not None:
+                    return fs, width, 0, None
+                else:
+                    y = fs
+            elif k == ord("o") and VWR is not None:
+                gambar, idx = [], []
+                for n, i in enumerate(src_lines[y:y+rows]):
+                    img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
+                    if img is not None:
+                        gambar.append(img.group())
+                        idx.append(n)
 
-            impath = ""
-            if len(gambar) == 1:
-                impath = imgs[int(gambar[0])]
-            elif len(gambar) > 1:
-                p, i = 0, 0
-                while p not in QUIT and p not in FOLLOW:
-                    stdscr.move(idx[i], x + width//2 + len(gambar[i]) + 1)
-                    stdscr.refresh()
-                    curses.curs_set(1)
-                    p = pad.getch()
-                    if p in SCROLL_DOWN:
-                        i += 1
-                    elif p in SCROLL_UP:
-                        i -= 1
-                    i = i % len(gambar)
+                impath = ""
+                if len(gambar) == 1:
+                    impath = imgs[int(gambar[0])]
+                elif len(gambar) > 1:
+                    p, i = 0, 0
+                    while p not in QUIT and p not in FOLLOW:
+                        stdscr.move(idx[i], x + width//2 + len(gambar[i]) + 1)
+                        stdscr.refresh()
+                        curses.curs_set(1)
+                        p = pad.getch()
+                        if p in SCROLL_DOWN:
+                            i += 1
+                        elif p in SCROLL_UP:
+                            i -= 1
+                        i = i % len(gambar)
 
-                curses.curs_set(0)
-                if p in FOLLOW:
-                    impath = imgs[int(gambar[i])]
+                    curses.curs_set(0)
+                    if p in FOLLOW:
+                        impath = imgs[int(gambar[i])]
 
-            if impath != "":
-                imgsrc = dots_path(chpath, impath)
-                k = open_media(pad, ebook, imgsrc)
-                continue
-        elif k == curses.KEY_RESIZE:
-            savestate(ebook.path, index, width, y, y/totlines)
-            # stated in pypi windows-curses page:
-            # to call resize_term right after KEY_RESIZE
-            if sys.platform == "win32":
-                curses.resize_term(rows, cols)
-                rows, cols = stdscr.getmaxyx()
-            else:
-                rows, cols = stdscr.getmaxyx()
-                curses.resize_term(rows, cols)
-            if cols <= width:
-                return 0, cols - 2, 0, y/totlines
-            else:
-                return 0, width, y, None
+                if impath != "":
+                    imgsrc = dots_path(chpath, impath)
+                    k = open_media(pad, ebook, imgsrc)
+                    continue
+            elif k == curses.KEY_RESIZE:
+                savestate(ebook.path, index, width, y, y/totlines)
+                # stated in pypi windows-curses page:
+                # to call resize_term right after KEY_RESIZE
+                if sys.platform == "win32":
+                    curses.resize_term(rows, cols)
+                    rows, cols = stdscr.getmaxyx()
+                else:
+                    rows, cols = stdscr.getmaxyx()
+                    curses.resize_term(rows, cols)
+                if cols <= width:
+                    return 0, cols - 2, 0, y/totlines
+                else:
+                    return 0, width, y, None
+            countstring = ""
 
         try:
             stdscr.clear()
