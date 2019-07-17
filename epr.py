@@ -114,8 +114,12 @@ VWR_LIST = [
     "firefox"
 ]
 VWR = None
-if sys.platform == "win32":
+if os.environ['TERM'] == "xterm-kitty":
+    VWR = "kitty +kitten icat"
+elif sys.platform == "win32":
     VWR = "start"
+elif sys.platform == "darwin":
+    VWR = "open"
 else:
     for i in VWR_LIST:
         if shutil.which(i) is not None:
