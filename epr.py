@@ -33,10 +33,11 @@ Key Binding:
     Toggle width    : 0
     ToC             : TAB       t
     Metadata        : m
+    Create local st : ~
 """
 
 
-__version__ = "2.3.0b"
+__version__ = "2.3.1b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -73,6 +74,7 @@ WIDEN = ord("=")
 META = ord("m")
 TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
+LOCALSAVING = {ord("`")}
 QUIT = {ord("q"), 3, 27}
 HELP = {ord("?")}
 
@@ -81,7 +83,6 @@ STATEFILE = ""
 STATE = {}
 LINEPRSRV = 0  # 2
 SEARCHPATTERN = None
-LOCALSTATESAVING = False
 VWR = None
 
 
@@ -323,8 +324,8 @@ def loadstate():
 
 
 def savestate(file, index, width, pos, pctg):
-    localstatefile = os.path.splitext(file)[0] + ".epr"
-    if os.path.isfile(localstatefile) or LOCALSTATESAVING:
+    localstatefile = os.path.splitext(file)[0] + ".json"
+    if os.path.isfile(localstatefile):
         local_state = {
             "index": str(index),
             "width": str(width),
@@ -949,6 +950,11 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
                 imgsrc = dots_path(chpath, impath)
                 k = open_media(pad, ebook, imgsrc)
                 continue
+        elif k in LOCALSAVING:
+            localstatefile = os.path.splitext(ebook.path)[0] + ".json"
+            if not os.path.isfile(localstatefile):
+                with open(localstatefile, "w+") as lc:
+                    lc.write("")
         elif k == curses.KEY_RESIZE:
             savestate(ebook.path, index, width, y, y/totlines)
             # stated in pypi windows-curses page:
@@ -987,8 +993,23 @@ def preread(stdscr, file):
 
     epub = Epub(file)
 
+    if epub.path in STATE:
+        idx = int(STATE[epub.path]["index"])
+        width = int(STATE[epub.path]["width"])
+        y = int(STATE[epub.path]["pos"])
+        pctg = None
+    else:
+        STATE[epub.path] = {}
+        idx = 0
+        y = 0
+        width = 80
+        pctg = None
+    if cols <= width:
+        width = cols - 2
+        if "pctg" in STATE[epub.path]:
+            pctg = float(STATE[epub.path]["pctg"])
     try:
-        with open(os.path.splitext(epub.path)[0]+".epr") as f:
+        with open(os.path.splitext(epub.path)[0]+".json") as f:
             local_state = json.load(f)
         idx = int(local_state["index"])
         width = int(local_state["width"])
@@ -998,22 +1019,7 @@ def preread(stdscr, file):
             width = cols - 2
             pctg = float(local_state["pctg"])
     except (FileNotFoundError, json.decoder.JSONDecodeError):
-        if epub.path in STATE:
-            idx = int(STATE[epub.path]["index"])
-            width = int(STATE[epub.path]["width"])
-            y = int(STATE[epub.path]["pos"])
-            pctg = None
-        else:
-            STATE[epub.path] = {}
-            idx = 0
-            y = 0
-            width = 80
-            pctg = None
-
-        if cols <= width:
-            width = cols - 2
-            if "pctg" in STATE[epub.path]:
-                pctg = float(STATE[epub.path]["pctg"])
+        pass
 
     epub.initialize()
     find_media_viewer()
@@ -1027,8 +1033,6 @@ def preread(stdscr, file):
 
 
 def main():
-    global LOCALSTATESAVING
-
     args = []
     if sys.argv[1:] != []:
         args += sys.argv[1:]
@@ -1052,10 +1056,6 @@ def main():
         dump = True
     else:
         dump = False
-
-    if len({"-l"} & set(args)) != 0:
-        args.remove("-l")
-        LOCALSTATESAVING = True
 
     loadstate()
 
