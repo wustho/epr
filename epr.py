@@ -35,7 +35,7 @@ Key Binding:
     Metadata        : m
 """
 
-__version__ = "2.2.10"
+__version__ = "2.3.0"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -114,9 +114,7 @@ VWR_LIST = [
     "firefox"
 ]
 VWR = None
-if os.environ['TERM'] == "xterm-kitty":
-    VWR = "kitty +kitten icat"
-elif sys.platform == "win32":
+if sys.platform == "win32":
     VWR = "start"
 elif sys.platform == "darwin":
     VWR = "open"

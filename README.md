@@ -30,7 +30,7 @@ Clone this repo, tweak `epr.py` as much as you see fit, rename it to `epr`, make
 Or simply (be careful if you already have package named `epr` installed):
 
 ```shell
-$ pip install git+https://github.com/wustho/epr.git
+$ pip3 install git+https://github.com/wustho/epr.git
 ```
 
 Or via chocolatey (maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)):
@@ -62,7 +62,7 @@ Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's o
 If you'd like to read epub in markdown format, which _requires_ additional dependency: `html2text`, checkout `markdown` branch of this repo or simply:
 
 ```shell
-$ pip install git+https://github.com/wustho/epr.git@markdown
+$ pip3 install git+https://github.com/wustho/epr.git@markdown
 ```
 
 Useful when you read more nonfiction reference epub (like manual or documentation) than fiction one.
@@ -97,9 +97,10 @@ Key Binding:
     Search          : /
     Next Occurence  : n
     Prev Occurence  : N
+    Toggle width    : =
+    Set width       : [count]=
     Shrink          : -
-    Enlarge         : =
-    Toggle width    : 0
+    Enlarge         : +
     ToC             : TAB       t
     Metadata        : m
 ```
@@ -153,7 +154,7 @@ Key Binding:
    If you feel bothered by these 2 TOC issues, checkout branch `commontoc` or install via:
 
    ```shell
-   $ pip install git+https://github.com/wustho/epr.git@commontoc
+   $ pip3 install git+https://github.com/wustho/epr.git@commontoc
    ```
 
    which will give you TOC behavior like in many common readers.
