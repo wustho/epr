@@ -837,6 +837,8 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
         elif k in PAGE_DOWN:
             if totlines - y - LINEPRSRV > rows:
                 y += rows - LINEPRSRV
+                stdscr.clear()
+                stdscr.refresh()
             elif index != len(contents)-1:
                 return 1, width, 0, None, ""
         elif k in CH_NEXT:
@@ -971,8 +973,8 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
                 return 0, width, y, None, ""
 
         try:
-            stdscr.clear()
-            stdscr.refresh()
+            # stdscr.clear()
+            # stdscr.refresh()
             if totlines - y < rows:
                 pad.refresh(y, 0, 0, x, totlines-y, x+width)
             else:
