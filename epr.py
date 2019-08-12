@@ -77,7 +77,7 @@ META = ord("m")
 TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
 LOCALSAVING = {ord("`")}
-QUIT = {ord("q"), 3, 27}
+QUIT = {ord("q"), 3, 27, 304}
 HELP = {ord("?")}
 
 
@@ -842,8 +842,11 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
             countstring = countstring + chr(k)
         else:
             if k in QUIT:
-                savestate(ebook.path, index, width, y, y/totlines)
-                sys.exit()
+                if k == 27 and countstring != "":
+                    countstring = ""
+                else:
+                    savestate(ebook.path, index, width, y, y/totlines)
+                    sys.exit()
             elif k in SCROLL_UP:
                 if y >= count:
                     y -= count
