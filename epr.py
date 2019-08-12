@@ -407,7 +407,7 @@ def toc(stdscr, src, index, width):
             count = 1
         else:
             count = int(countstring)
-        if key_toc in range(48, 57): # i.e., k is a numeral
+        if key_toc in range(48, 58): # i.e., k is a numeral
             countstring = countstring + chr(key_toc)
         else:
             if key_toc in SCROLL_UP or key_toc in PAGE_UP:
@@ -838,7 +838,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
             count = 1
         else:
             count = int(countstring)
-        if k in range(48, 57): # i.e., k is a numeral
+        if k in range(48, 58): # i.e., k is a numeral
             countstring = countstring + chr(k)
         else:
             if k in QUIT:
