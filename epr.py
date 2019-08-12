@@ -37,7 +37,7 @@ Key Binding:
 """
 
 
-__version__ = "2.3.1b"
+__version__ = "2.3.0b"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -567,6 +567,8 @@ def find_media_viewer():
     ]
     if sys.platform == "win32":
         VWR = "start"
+    elif sys.platform == "darwin":
+        VWR = "open"
     else:
         for i in VWR_LIST:
             if shutil.which(i) is not None:
