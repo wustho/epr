@@ -34,7 +34,7 @@ Key Binding:
     Enlarge         : +
     ToC             : TAB       t
     Metadata        : m
-    Create local st : ~
+    Create local st : `
 """
 
 
@@ -927,7 +927,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
                 width -= count
                 return 0, width, 0, y/totlines, ""
             elif k == WIDTH:
-                if countstring == "": 
+                if countstring == "":
                     # if called without a count, toggle between 80 cols and full width
                     if width != 80 and cols - 2 >= 80:
                         return 0, 80, 0, y/totlines, ""
@@ -1014,6 +1014,7 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
 
         try:
             stdscr.clear()
+            stdscr.addstr(0, 0, countstring)
             stdscr.refresh()
             if totlines - y < rows:
                 pad.refresh(y, 0, 0, x, totlines-y, x+width)
