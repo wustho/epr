@@ -71,7 +71,7 @@ WIDTH = ord("=")
 META = ord("m")
 TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
-QUIT = {ord("q"), 3, 27}
+QUIT = {ord("q"), 3, 27, 304}
 HELP = {ord("?")}
 
 if os.getenv("HOME") is not None:
@@ -368,7 +368,7 @@ def toc(stdscr, src, index, width):
             count = 1
         else:
             count = int(countstring)
-        if key_toc in range(48, 57): # i.e., k is a numeral
+        if key_toc in range(48, 58): # i.e., k is a numeral
             countstring = countstring + chr(key_toc)
         else:
             if key_toc in SCROLL_UP or key_toc in PAGE_UP:
@@ -750,12 +750,15 @@ def reader(stdscr, ebook, index, width, y, pctg):
             count = 1
         else:
             count = int(countstring)
-        if k in range(48, 57): # i.e., k is a numeral
+        if k in range(48, 58): # i.e., k is a numeral
             countstring = countstring + chr(k)
         else:
             if k in QUIT:
-                savestate(ebook.path, index, width, y, y/totlines)
-                sys.exit()
+                if k == 27 and countstring != "":
+                    countstring = ""
+                else:
+                    savestate(ebook.path, index, width, y, y/totlines)
+                    sys.exit()
             elif k in SCROLL_UP:
                 if y >= count:
                     y -= count
@@ -893,6 +896,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
 
         try:
             stdscr.clear()
+            stdscr.addstr(0, 0, countstring)
             stdscr.refresh()
             if totlines - y < rows:
                 pad.refresh(y,0, 0,x, totlines-y,x+width)
