@@ -810,10 +810,10 @@ def searching(stdscr, pad, src, width, y, ch, tot):
 def find_curr_toc_id(toc_idx, toc_sect, toc_secid, index, y):
     ntoc = 0
     for n, (i, j) in enumerate(zip(toc_idx, toc_sect)):
-        if i == index:
+        if i <= index:
             if y >= toc_secid.get(j, 0):
                 ntoc = n
-        elif i > index:
+        else:
             break
     return ntoc
 
