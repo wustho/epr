@@ -35,10 +35,12 @@ Key Binding:
     Metadata        : m
 """
 
+
 __version__ = "2.3.0"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
+
 
 import curses
 import zipfile
@@ -55,6 +57,7 @@ from html import unescape
 from subprocess import run
 from html.parser import HTMLParser
 from difflib import SequenceMatcher as SM
+
 
 # key bindings
 SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
@@ -75,76 +78,58 @@ QUIT = {ord("q"), 3, 27, 304}
 HELP = {ord("?")}
 COLORSWITCH = ord("c")
 
-# colors
-DARK = (145, 16)
-LIGHT = (23, 255)
-COLORSUPPORT = False
 
-if os.getenv("HOME") is not None:
-    statefile = os.path.join(os.getenv("HOME"), ".epr")
-    if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
-        configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
-        os.makedirs(configdir, exist_ok=True)
-        if os.path.isfile(statefile):
-            if os.path.isfile(os.path.join(configdir, "config")):
-                os.remove(os.path.join(configdir, "config"))
-            shutil.move(statefile, os.path.join(configdir, "config"))
-        statefile = os.path.join(configdir, "config")
-elif os.getenv("USERPROFILE") is not None:
-    statefile = os.path.join(os.getenv("USERPROFILE"), ".epr")
-else:
-    statefile = os.devnull
+# colorscheme
+# DARK/LIGHT = (fg, bg)
+# -1 is default terminal fg/bg
+DARK = (252, 235)
+LIGHT = (239, 223)
 
-if os.path.exists(statefile):
-    with open(statefile, "r") as f:
-        state = json.load(f)
-else:
-    state = {}
 
-NS = {"DAISY": "http://www.daisy.org/z3986/2005/ncx/",
-      "OPF": "http://www.idpf.org/2007/opf",
-      "CONT": "urn:oasis:names:tc:opendocument:xmlns:container",
-      "XHTML": "http://www.w3.org/1999/xhtml",
-      "EPUB": "http://www.idpf.org/2007/ops"}
-
+# some global envs, better leave these alone
+STATEFILE = ""
+STATE = {}
 LINEPRSRV = 0  # default = 2
-
+COLORSUPPORT = False
 SEARCHPATTERN = None
-
-VWR_LIST = [
-    "feh",
-    "gnome-open",
-    "gvfs-open",
-    "xdg-open",
-    "kde-open",
-    "firefox"
-]
 VWR = None
-if sys.platform == "win32":
-    VWR = "start"
-elif sys.platform == "darwin":
-    VWR = "open"
-else:
-    for i in VWR_LIST:
-        if shutil.which(i) is not None:
-            VWR = i
-            break
+
 
 class Epub:
+    NS = {
+        "DAISY": "http://www.daisy.org/z3986/2005/ncx/",
+        "OPF": "http://www.idpf.org/2007/opf",
+        "CONT": "urn:oasis:names:tc:opendocument:xmlns:container",
+        "XHTML": "http://www.w3.org/1999/xhtml",
+        "EPUB": "http://www.idpf.org/2007/ops"
+    }
+
     def __init__(self, fileepub):
         self.path = os.path.abspath(fileepub)
         self.file = zipfile.ZipFile(fileepub, "r")
         cont = ET.parse(self.file.open("META-INF/container.xml"))
-        self.rootfile = cont.find("CONT:rootfiles/CONT:rootfile", NS).attrib["full-path"]
-        self.rootdir = os.path.dirname(self.rootfile) + "/" if os.path.dirname(self.rootfile) != "" else ""
+        self.rootfile = cont.find(
+            "CONT:rootfiles/CONT:rootfile",
+            self.NS
+        ).attrib["full-path"]
+        self.rootdir = os.path.dirname(self.rootfile)\
+            + "/" if os.path.dirname(self.rootfile) != "" else ""
         cont = ET.parse(self.file.open(self.rootfile))
         # EPUB3
         self.version = cont.getroot().get("version")
         if self.version == "2.0":
-            # self.toc = self.rootdir + cont.find("OPF:manifest/*[@id='ncx']", NS).get("href")
-            self.toc = self.rootdir + cont.find("OPF:manifest/*[@media-type='application/x-dtbncx+xml']", NS).get("href")
+            # self.toc = self.rootdir + cont.find("OPF:manifest/*[@id='ncx']", self.NS).get("href")
+            self.toc = self.rootdir\
+                + cont.find(
+                    "OPF:manifest/*[@media-type='application/x-dtbncx+xml']",
+                    self.NS
+                ).get("href")
         elif self.version == "3.0":
-            self.toc = self.rootdir + cont.find("OPF:manifest/*[@properties='nav']", NS).get("href")
+            self.toc = self.rootdir\
+                + cont.find(
+                    "OPF:manifest/*[@properties='nav']",
+                    self.NS
+                ).get("href")
 
         self.contents = []
         self.toc_entries = []
@@ -153,7 +138,7 @@ class Epub:
         meta = []
         # why self.file.read(self.rootfile) problematic
         cont = ET.fromstring(self.file.open(self.rootfile).read())
-        for i in cont.findall("OPF:metadata/*", NS):
+        for i in cont.findall("OPF:metadata/*", self.NS):
             if i.text is not None:
                 meta.append([re.sub("{.*?}", "", i.tag), i.text])
         return meta
@@ -161,17 +146,18 @@ class Epub:
     def initialize(self):
         cont = ET.parse(self.file.open(self.rootfile)).getroot()
         manifest = []
-        for i in cont.findall("OPF:manifest/*", NS):
+        for i in cont.findall("OPF:manifest/*", self.NS):
             # EPUB3
             # if i.get("id") != "ncx" and i.get("properties") != "nav":
-            if i.get("media-type") != "application/x-dtbncx+xml" and i.get("properties") != "nav":
+            if i.get("media-type") != "application/x-dtbncx+xml"\
+               and i.get("properties") != "nav":
                 manifest.append([
                     i.get("id"),
                     i.get("href")
                 ])
 
         spine, contents = [], []
-        for i in cont.findall("OPF:spine/*", NS):
+        for i in cont.findall("OPF:spine/*", self.NS):
             spine.append(i.get("idref"))
         for i in spine:
             for j in manifest:
@@ -185,17 +171,20 @@ class Epub:
         toc = ET.parse(self.file.open(self.toc)).getroot()
         # EPUB3
         if self.version == "2.0":
-            navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", NS)
+            navPoints = toc.findall("DAISY:navMap//DAISY:navPoint", self.NS)
         elif self.version == "3.0":
-            navPoints = toc.findall("XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a", NS)
+            navPoints = toc.findall(
+                "XHTML:body//XHTML:nav[@EPUB:type='toc']//XHTML:a",
+                self.NS
+            )
         for i in contents:
             name = "-"
             for j in navPoints:
                 # EPUB3
                 if self.version == "2.0":
-                    # if i == unquote(j.find("DAISY:content", NS).get("src")):
-                    if re.search(i, unquote(j.find("DAISY:content", NS).get("src"))) is not None:
-                        name = j.find("DAISY:navLabel/DAISY:text", NS).text
+                    # if i == unquote(j.find("DAISY:content", self.NS).get("src")):
+                    if re.search(i, unquote(j.find("DAISY:content", self.NS).get("src"))) is not None:
+                        name = j.find("DAISY:navLabel/DAISY:text", self.NS).text
                         break
                 elif self.version == "3.0":
                     # if i == unquote(j.get("href")):
@@ -203,6 +192,7 @@ class Epub:
                         name = "".join(list(j.itertext()))
                         break
             self.toc_entries.append(name)
+
 
 class HTMLtoLines(HTMLParser):
     para = {"p", "div"}
@@ -305,22 +295,47 @@ class HTMLtoLines(HTMLParser):
                 text += textwrap.fill(i, width).splitlines() + [""]
         return text, self.imgs
 
+
+def loadstate():
+    global STATE, STATEFILE
+    if os.getenv("HOME") is not None:
+        STATEFILE = os.path.join(os.getenv("HOME"), ".epr")
+        if os.path.isdir(os.path.join(os.getenv("HOME"), ".config")):
+            configdir = os.path.join(os.getenv("HOME"), ".config", "epr")
+            os.makedirs(configdir, exist_ok=True)
+            if os.path.isfile(STATEFILE):
+                if os.path.isfile(os.path.join(configdir, "config")):
+                    os.remove(os.path.join(configdir, "config"))
+                shutil.move(STATEFILE, os.path.join(configdir, "config"))
+            STATEFILE = os.path.join(configdir, "config")
+    elif os.getenv("USERPROFILE") is not None:
+        STATEFILE = os.path.join(os.getenv("USERPROFILE"), ".epr")
+    else:
+        STATEFILE = os.devnull
+
+    if os.path.exists(STATEFILE):
+        with open(STATEFILE, "r") as f:
+            STATE = json.load(f)
+
+
 def savestate(file, index, width, pos, pctg ):
-    for i in state:
-        state[i]["lastread"] = str(0)
-    state[file]["lastread"] = str(1)
-    state[file]["index"] = str(index)
-    state[file]["width"] = str(width)
-    state[file]["pos"] = str(pos)
-    state[file]["pctg"] = str(pctg)
-    with open(statefile, "w") as f:
-        json.dump(state, f, indent=4)
+    for i in STATE:
+        STATE[i]["lastread"] = str(0)
+    STATE[file]["lastread"] = str(1)
+    STATE[file]["index"] = str(index)
+    STATE[file]["width"] = str(width)
+    STATE[file]["pos"] = str(pos)
+    STATE[file]["pctg"] = str(pctg)
+    with open(STATEFILE, "w") as f:
+        json.dump(STATE, f, indent=4)
+
 
 def pgup(pos, winhi, preservedline=0, c=1):
     if pos >= (winhi - preservedline) * c:
         return pos - (winhi - preservedline) * c
     else:
         return 0
+
 
 def pgdn(pos, tot, winhi, preservedline=0,c=1):
     if pos + (winhi * c) <= tot - winhi:
@@ -331,11 +346,13 @@ def pgdn(pos, tot, winhi, preservedline=0,c=1):
             return 0
         return pos
 
+
 def pgend(tot, winhi):
     if tot - winhi >= 0:
         return tot - winhi
     else:
         return 0
+
 
 def toc(stdscr, src, index, width):
     rows, cols = stdscr.getmaxyx()
@@ -430,6 +447,7 @@ def toc(stdscr, src, index, width):
     toc.refresh()
     return
 
+
 def meta(stdscr, ebook):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
@@ -487,6 +505,7 @@ def meta(stdscr, ebook):
     meta.refresh()
     return
 
+
 def help(stdscr):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
@@ -540,6 +559,7 @@ def help(stdscr):
     help.refresh()
     return
 
+
 def dots_path(curr, tofi):
     candir = curr.split("/")
     tofi = tofi.split("/")
@@ -553,6 +573,30 @@ def dots_path(curr, tofi):
         pass
     return "/".join(candir+tofi)
 
+
+def find_media_viewer():
+    global VWR
+    VWR_LIST = [
+        "feh",
+        "gio",
+        "gnome-open",
+        "gvfs-open",
+        "xdg-open",
+        "kde-open",
+        "firefox"
+    ]
+    if sys.platform == "win32":
+        VWR = "start"
+    elif sys.platform == "darwin":
+        VWR = "open"
+    else:
+        for i in VWR_LIST:
+            if shutil.which(i) is not None:
+                VWR = i
+                if VWR == "gio": VWR += " open"
+                break
+
+
 def open_media(scr, epub, src):
     sfx = os.path.splitext(src)[1]
     fd, path = tempfile.mkstemp(suffix=sfx)
@@ -564,6 +608,7 @@ def open_media(scr, epub, src):
     finally:
         os.remove(path)
     return k
+
 
 def searching(stdscr, pad, src, width, y, ch, tot):
     global SEARCHPATTERN
@@ -724,6 +769,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         stdscr.refresh()
         pad.refresh(y,0, 0,x, rows-2,x+width)
         s = pad.getch()
+
 
 def reader(stdscr, ebook, index, width, y, pctg):
     k = 0 if SEARCHPATTERN is None else ord("/")
@@ -910,8 +956,14 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     imgsrc = dots_path(chpath, impath)
                     k = open_media(pad, ebook, imgsrc)
                     continue
-            elif k == COLORSWITCH and COLORSUPPORT:
-                stdscr.bkgd(curses.color_pair(count+1))
+            elif k == COLORSWITCH and COLORSUPPORT and countstring in {"", "0", "1", "2"}:
+                if countstring == "":
+                    count_color = curses.pair_number(stdscr.getbkgd())
+                    if count_color not in {2, 3}: count_color = 1
+                    count_color = count_color % 3
+                else:
+                    count_color = count
+                stdscr.bkgd(curses.color_pair(count_color+1))
                 return 0, width, y, None
             elif k == curses.KEY_RESIZE:
                 savestate(ebook.path, index, width, y, y/totlines)
@@ -941,6 +993,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             pass
         k = pad.getch()
 
+
 def preread(stdscr, file):
     global COLORSUPPORT
 
@@ -962,13 +1015,13 @@ def preread(stdscr, file):
 
     epub = Epub(file)
 
-    if epub.path in state:
-        idx = int(state[epub.path]["index"])
-        width = int(state[epub.path]["width"])
-        y = int(state[epub.path]["pos"])
+    if epub.path in STATE:
+        idx = int(STATE[epub.path]["index"])
+        width = int(STATE[epub.path]["width"])
+        y = int(STATE[epub.path]["pos"])
         pctg = None
     else:
-        state[epub.path] = {}
+        STATE[epub.path] = {}
         idx = 0
         y = 0
         width = 80
@@ -976,14 +1029,16 @@ def preread(stdscr, file):
 
     if cols <= width:
         width = cols - 2
-        if "pctg" in state[epub.path]:
-            pctg = float(state[epub.path]["pctg"])
+        if "pctg" in STATE[epub.path]:
+            pctg = float(STATE[epub.path]["pctg"])
 
     epub.initialize()
+    find_media_viewer()
 
     while True:
         incr, width, y, pctg = reader(stdscr, epub, idx, width, y, pctg)
         idx += incr
+
 
 def main():
     args = []
@@ -1010,16 +1065,18 @@ def main():
     else:
         dump = False
 
+    loadstate()
+
     if args == []:
         file, todel = False, []
-        for i in state:
+        for i in STATE:
             if not os.path.exists(i):
                 todel.append(i)
-            elif state[i]["lastread"] == str(1):
+            elif STATE[i]["lastread"] == str(1):
                 file = i
 
         for i in todel:
-            del state[i]
+            del STATE[i]
 
         if not file:
             print(__doc__)
@@ -1031,7 +1088,7 @@ def main():
     else:
         val = cand = 0
         todel = []
-        for i in state.keys():
+        for i in STATE.keys():
             if not os.path.exists(i):
                 todel.append(i)
             else:
@@ -1040,12 +1097,12 @@ def main():
                     val = match_val
                     cand = i
         for i in todel:
-            del state[i]
-        with open(statefile, "w") as f:
-            json.dump(state, f, indent=4)
+            del STATE[i]
+        with open(STATEFILE, "w") as f:
+            json.dump(STATE, f, indent=4)
         if len(args) == 1 and re.match(r"[0-9]+", args[0]) is not None:
             try:
-                cand = list(state.keys())[int(args[0])-1]
+                cand = list(STATE.keys())[int(args[0])-1]
                 val = 1
             except IndexError:
                 val = 0
@@ -1053,9 +1110,9 @@ def main():
             file = cand
         else:
             print("\nReading history:")
-            dig = len(str(len(state.keys())+1))
-            for n, i in enumerate(state.keys()):
-                print(str(n+1).rjust(dig) + ("* " if state[i]["lastread"] == "1" else "  ") + i)
+            dig = len(str(len(STATE.keys())+1))
+            for n, i in enumerate(STATE.keys()):
+                print(str(n+1).rjust(dig) + ("* " if STATE[i]["lastread"] == "1" else "  ") + i)
             if len({"-r"} & set(args)) != 0:
                 sys.exit()
             else:
@@ -1082,6 +1139,7 @@ def main():
 
     else:
         curses.wrapper(preread, file)
+
 
 if __name__ == "__main__":
     main()
