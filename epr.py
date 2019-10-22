@@ -73,6 +73,12 @@ TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
 QUIT = {ord("q"), 3, 27, 304}
 HELP = {ord("?")}
+COLORSWITCH = ord("c")
+
+# colors
+DARK = (145, 16)
+LIGHT = (23, 255)
+COLORSUPPORT = False
 
 if os.getenv("HOME") is not None:
     statefile = os.path.join(os.getenv("HOME"), ".epr")
@@ -337,6 +343,9 @@ def toc(stdscr, src, index, width):
     Y, X = 2, 2
     oldindex = index
     toc = curses.newwin(hi, wi, Y, X)
+    if COLORSUPPORT:
+        toc.bkgd(stdscr.getbkgd())
+
     toc.box()
     toc.keypad(True)
     toc.addstr(1,2, "Table of Contents")
@@ -346,6 +355,9 @@ def toc(stdscr, src, index, width):
     totlines = len(src)
     toc.refresh()
     pad = curses.newpad(totlines, wi - 2 )
+    if COLORSUPPORT:
+        pad.bkgd(stdscr.getbkgd())
+
     pad.keypad(True)
 
     padhi = rows - 5 - Y - 4 + 1
@@ -376,7 +388,7 @@ def toc(stdscr, src, index, width):
                 if index < 0:
                     index = 0
             elif key_toc in SCROLL_DOWN or key_toc in PAGE_DOWN:
-                index += count 
+                index += count
                 if index + 1 >= totlines:
                     index = totlines - 1
             elif key_toc in FOLLOW:
@@ -409,7 +421,7 @@ def toc(stdscr, src, index, width):
             att = curses.A_REVERSE if index == n else curses.A_NORMAL
             pre = ">>" if index == n else "  "
             pad.addstr(n, 0, pre)
-            pad.chgat(n, 0, span[n], att)
+            pad.chgat(n, 0, span[n], pad.getbkgd() | att)
 
         pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
         key_toc = toc.getch()
@@ -423,6 +435,9 @@ def meta(stdscr, ebook):
     hi, wi = rows - 4, cols - 4
     Y, X = 2, 2
     meta = curses.newwin(hi, wi, Y, X)
+    if COLORSUPPORT:
+        meta.bkgd(stdscr.getbkgd())
+
     meta.box()
     meta.keypad(True)
     meta.addstr(1,2, "Metadata")
@@ -438,6 +453,9 @@ def meta(stdscr, ebook):
     totlines = len(src_lines)
 
     pad = curses.newpad(totlines, wi - 2 )
+    if COLORSUPPORT:
+        pad.bkgd(stdscr.getbkgd())
+
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         pad.addstr(n, 0, i)
@@ -474,6 +492,9 @@ def help(stdscr):
     hi, wi = rows - 4, cols - 4
     Y, X = 2, 2
     help = curses.newwin(hi, wi, Y, X)
+    if COLORSUPPORT:
+        help.bkgd(stdscr.getbkgd())
+
     help.box()
     help.keypad(True)
     help.addstr(1,2, "Help")
@@ -485,6 +506,9 @@ def help(stdscr):
     totlines = len(src_lines)
 
     pad = curses.newpad(totlines, wi - 2 )
+    if COLORSUPPORT:
+        pad.bkgd(stdscr.getbkgd())
+
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         pad.addstr(n, 0, i)
@@ -545,8 +569,11 @@ def searching(stdscr, pad, src, width, y, ch, tot):
     global SEARCHPATTERN
     rows, cols = stdscr.getmaxyx()
     x = (cols - width) // 2
+
     if SEARCHPATTERN is None:
         stat = curses.newwin(1, cols, rows-1, 0)
+        if COLORSUPPORT:
+            stat.bkgd(stdscr.getbkgd())
         stat.keypad(True)
         curses.echo(1)
         curses.curs_set(1)
@@ -642,7 +669,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         if s in QUIT:
             SEARCHPATTERN = None
             for i in found:
-                pad.chgat(i[0], i[1], i[2], curses.A_NORMAL)
+                pad.chgat(i[0], i[1], i[2], pad.getbkgd())
             stdscr.clear()
             stdscr.refresh()
             return y
@@ -688,8 +715,9 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                     y = 0
 
         for n, i in enumerate(found):
+            # attr = (pad.getbkgd() | curses.A_REVERSE) if n == sidx else pad.getbkgd()
             attr = curses.A_REVERSE if n == sidx else curses.A_NORMAL
-            pad.chgat(i[0], i[1], i[2], attr)
+            pad.chgat(i[0], i[1], i[2], pad.getbkgd() | attr)
 
         stdscr.clear()
         stdscr.addstr(rows-1, 0, msg, curses.A_REVERSE)
@@ -726,6 +754,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
         y = y % totlines
 
     pad = curses.newpad(totlines, width + 2) # + 2 unnecessary
+
+    if COLORSUPPORT:
+        pad.bkgd(stdscr.getbkgd())
+
     pad.keypad(True)
     for n, i in enumerate(src_lines):
         if re.search("\[IMG:[0-9]+\]", i):
@@ -809,17 +841,17 @@ def reader(stdscr, ebook, index, width, y, pctg):
                 if k == curses.KEY_RESIZE:
                     continue
             elif k == WIDEN:
-                width += count 
+                width += count
                 if width >= cols - 2:
                     width = cols - 2
                 return 0, width, 0, y/totlines
             elif k == SHRINK:
-                width -= count 
+                width -= count
                 if width < 20:
                     width = 20
                 return 0, width, 0, y/totlines
             elif k == WIDTH:
-                if countstring == "": 
+                if countstring == "":
                     # if called without a count, toggle between 80 cols and full width
                     if width != 80 and cols - 2 >= 80:
                         return 0, 80, 0, y/totlines
@@ -878,6 +910,9 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     imgsrc = dots_path(chpath, impath)
                     k = open_media(pad, ebook, imgsrc)
                     continue
+            elif k == COLORSWITCH and COLORSUPPORT:
+                stdscr.bkgd(curses.color_pair(count+1))
+                return 0, width, y, None
             elif k == curses.KEY_RESIZE:
                 savestate(ebook.path, index, width, y, y/totlines)
                 # stated in pypi windows-curses page:
@@ -907,7 +942,17 @@ def reader(stdscr, ebook, index, width, y, pctg):
         k = pad.getch()
 
 def preread(stdscr, file):
+    global COLORSUPPORT
+
     curses.use_default_colors()
+    try:
+        curses.init_pair(1, -1, -1)
+        curses.init_pair(2, DARK[0], DARK[1])
+        curses.init_pair(3, LIGHT[0], LIGHT[1])
+        COLORSUPPORT = True
+    except:
+        COLORSUPPORT  = False
+
     stdscr.keypad(True)
     curses.curs_set(0)
     stdscr.clear()
