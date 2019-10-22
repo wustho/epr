@@ -11,7 +11,7 @@ setup(
     license = __license__,
     keywords = ["EPUB", "EPUB3", "CLI", "Terminal", "Reader"],
     install_requires = ["windows-curses"] if sys.platform == "win32" else [],
-    python_requires = "~=3.7",
+    python_requires = "~=3.0",
     py_modules = ["epr"],
     entry_points = { "console_scripts": ["epr = epr:main"] }
 )
