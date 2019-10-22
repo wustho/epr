@@ -11,6 +11,7 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 - Supports EPUB3 (no audio support)
 - Secondary vim-like bindings
 - Supports opening images
+- Dark/Light colorscheme (depends on terminal color capability)
 
 ## Limitations
 
@@ -19,6 +20,7 @@ Terminal/CLI Epub reader written in Python 3.7 with features:
 - Supports only horizontal left-to-right text
 - Doesn't support hyperlinks
 - Some known issues mentioned below
+- Customizing keybindings & colorscheme done inside the source code itself (no separated config file)
 
 ## Dependencies
 
@@ -67,6 +69,28 @@ $ pip3 install git+https://github.com/wustho/epr.git@markdown
 
 Useful when you read more nonfiction reference epub (like manual or documentation) than fiction one.
 
+## Colorscheme
+
+This is just a simple colorscheme involving foreground dan background color only, no syntax highlighting.
+You can cycle color between default terminal color, dark or light respectively by pressing `c`.
+You can also switch color to default, dark or light by pressing `0c`, `1c` or `2c` respectively.
+
+Customizing dark/light colorscheme needs to be done inside the source code by editing these lines:
+
+```python
+# colorscheme
+# DARK/LIGHT = (fg, bg)
+# -1 is default terminal fg/bg
+DARK = (252, 235)
+LIGHT = (239, 223)
+```
+
+To see available values assigned to colors, you can run this one-liner on bash:
+
+```shell
+$ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \e[0m" $i; i=$((i+1)); done; echo; done
+```
+
 ## Usages
 
 ```
@@ -103,6 +127,7 @@ Key Binding:
     Enlarge         : +
     ToC             : TAB       t
     Metadata        : m
+    Switch colorsch : [default=0, dark=1, light=2]c
 ```
 
 ## Known Issues
@@ -140,9 +165,9 @@ Key Binding:
      Table of Contents
      -----------------
 
-	     1. Title Page
-	     2. Chapter I
-	     3. Chapter V
+         1. Title Page
+         2. Chapter I
+         3. Chapter V
      ```
 
      This happens because Chapter II to Chapter IV is probably in the same file with Chapter I,

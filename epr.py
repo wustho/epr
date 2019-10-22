@@ -33,6 +33,7 @@ Key Binding:
     Enlarge         : +
     ToC             : TAB       t
     Metadata        : m
+    Switch colorsch : [default=0, dark=1, light=2]c
 """
 
 
