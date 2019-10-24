@@ -72,7 +72,7 @@ CH_END = {curses.KEY_END, ord("G")}
 SHRINK = ord("-")
 WIDEN = ord("+")
 WIDTH = ord("=")
-META = ord("m")
+META = {ord("m")}
 TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
 QUIT = {ord("q"), 3, 27, 304}
@@ -393,7 +393,7 @@ def toc(stdscr, src, index, width):
         span.append(len(strs))
 
     countstring = ""
-    while key_toc not in TOC and key_toc not in QUIT:
+    while key_toc not in TOC|QUIT:
         if countstring == "":
             count = 1
         else:
@@ -425,7 +425,7 @@ def toc(stdscr, src, index, width):
                 index = 0
             elif key_toc in CH_END:
                 index = totlines - 1
-            elif key_toc == curses.KEY_RESIZE:
+            elif key_toc in {curses.KEY_RESIZE}|HELP|META:
                 return key_toc
             countstring = ""
 
@@ -484,7 +484,7 @@ def meta(stdscr, ebook):
 
     padhi = rows - 5 - Y - 4 + 1
 
-    while key_meta != META and key_meta not in QUIT:
+    while key_meta not in META|QUIT:
         if key_meta in SCROLL_UP and y > 0:
             y -= 1
         elif key_meta in SCROLL_DOWN and y < totlines - hi + 6:
@@ -497,7 +497,7 @@ def meta(stdscr, ebook):
             y = 0
         elif key_meta in CH_END:
             y = pgend(totlines, padhi)
-        elif key_meta == curses.KEY_RESIZE:
+        elif key_meta in {curses.KEY_RESIZE}|HELP|TOC:
             return key_meta
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
         key_meta = meta.getch()
@@ -538,7 +538,7 @@ def help(stdscr):
 
     padhi = rows - 5 - Y - 4 + 1
 
-    while key_help not in HELP and key_help not in QUIT:
+    while key_help not in HELP|QUIT:
         if key_help in SCROLL_UP and y > 0:
             y -= 1
         elif key_help in SCROLL_DOWN and y < totlines - hi + 6:
@@ -551,7 +551,7 @@ def help(stdscr):
             y = 0
         elif key_help in CH_END:
             y = pgend(totlines, padhi)
-        elif key_help == curses.KEY_RESIZE:
+        elif key_help in {curses.KEY_RESIZE}|META|TOC:
             return key_help
         pad.refresh(y,0, 6,5, rows - 5, cols - 5)
         key_help = help.getch()
@@ -875,17 +875,17 @@ def reader(stdscr, ebook, index, width, y, pctg):
             elif k in TOC:
                 fllwd = toc(stdscr, toc_src, index, width)
                 if fllwd is not None:
-                    if fllwd == curses.KEY_RESIZE:
+                    if fllwd in {curses.KEY_RESIZE}|HELP|META:
                         k = fllwd
                         continue
                     return fllwd - index, width, 0, None
-            elif k == META:
+            elif k in META:
                 k = meta(stdscr, ebook)
-                if k == curses.KEY_RESIZE:
+                if k in {curses.KEY_RESIZE}|HELP|TOC:
                     continue
             elif k in HELP:
                 k = help(stdscr)
-                if k == curses.KEY_RESIZE:
+                if k in {curses.KEY_RESIZE}|META|TOC:
                     continue
             elif k == WIDEN:
                 width += count
