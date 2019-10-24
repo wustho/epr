@@ -288,12 +288,12 @@ class HTMLtoLines(HTMLParser):
             if n in self.idhead:
                 text += [i.rjust(width//2 + len(i)//2)] + [""]
             elif n in self.idinde:
-                text += ["   "+j for j in textwrap.fill(i, width - 3).splitlines()] + [""]
+                text += ["   "+j for j in textwrap.wrap(i, width - 3)] + [""]
             elif n in self.idbull:
-                tmp = textwrap.fill(i, width - 3).splitlines()
+                tmp = textwrap.wrap(i, width - 3)
                 text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
             else:
-                text += textwrap.fill(i, width).splitlines() + [""]
+                text += textwrap.wrap(i, width) + [""]
         return text, self.imgs
 
 
@@ -467,7 +467,7 @@ def meta(stdscr, ebook):
     for i in ebook.get_meta():
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
-        mdata += textwrap.fill(i[0].upper() + ": " + data, wi - 6).splitlines()
+        mdata += textwrap.wrap(i[0].upper() + ": " + data, wi - 6)
     src_lines = mdata
     totlines = len(src_lines)
 
