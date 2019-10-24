@@ -59,16 +59,6 @@ Run `epr -r` to show list of all reading history.
 
 Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it and `q` to cancel.
 
-## Vanilla or Markdown?
-
-If you'd like to read epub in markdown format, which _requires_ additional dependency: `html2text`, checkout `markdown` branch of this repo or simply:
-
-```shell
-$ pip3 install git+https://github.com/wustho/epr.git@markdown
-```
-
-Useful when you read more nonfiction reference epub (like manual or documentation) than fiction one.
-
 ## Colorscheme
 
 This is just a simple colorscheme involving foreground dan background color only, no syntax highlighting.
@@ -90,6 +80,21 @@ To see available values assigned to colors, you can run this one-liner on bash:
 ```shell
 $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \e[0m" $i; i=$((i+1)); done; echo; done
 ```
+
+## Vanilla or Markdown?
+
+If you'd like to read epub in markdown format, which _requires_ additional dependency: `html2text`, checkout `markdown` branch of this repo or simply:
+
+```shell
+$ pip3 install git+https://github.com/wustho/epr.git@markdown
+```
+
+Useful when you read more nonfiction reference epub (like manual or documentation) than fiction one.
+
+## Reading Progress Indicator
+
+If you need reading progress indicator and you don't mind a little more startup time, checkout [epy](https://github.com/wustho/epy).
+It's just my fork of this `epr`, but with one extra feature: **Reading Progress Percentage**.
 
 ## Usages
 
