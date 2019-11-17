@@ -83,6 +83,8 @@ $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \
 
 ## Vanilla or Markdown?
 
+[UNMAINTAINED]
+
 If you'd like to read epub in markdown format, which _requires_ additional dependency: `html2text`, checkout `markdown` branch of this repo or simply:
 
 ```shell
