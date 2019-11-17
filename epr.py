@@ -197,7 +197,8 @@ class Epub:
 
 class HTMLtoLines(HTMLParser):
     para = {"p", "div"}
-    inde = {"q", "dt", "dd", "blockquote", "pre"}
+    inde = {"q", "dt", "dd", "blockquote"}
+    pref = {"pre"}
     bull = {"li"}
     hide = {"script", "style", "head"}
     # hide = {"script", "style", "head", ", "sub}
@@ -209,16 +210,20 @@ class HTMLtoLines(HTMLParser):
         self.ishead = False
         self.isinde = False
         self.isbull = False
+        self.ispref = False
         self.ishidden = False
         self.idhead = set()
         self.idinde = set()
         self.idbull = set()
+        self.idpref = set()
 
     def handle_starttag(self, tag, attrs):
         if re.match("h[1-6]", tag) is not None:
             self.ishead = True
         elif tag in self.inde:
             self.isinde = True
+        elif tag in self.pref:
+            self.ispref = True
         elif tag in self.bull:
             self.isbull = True
         elif tag in self.hide:
@@ -256,6 +261,10 @@ class HTMLtoLines(HTMLParser):
             if self.text[-1] != "":
                 self.text.append("")
             self.isinde = False
+        elif tag in self.pref:
+            if self.text[-1] != "":
+                self.text.append("")
+            self.ispref = False
         elif tag in self.bull:
             if self.text[-1] != "":
                 self.text.append("")
@@ -271,7 +280,10 @@ class HTMLtoLines(HTMLParser):
                 tmp = raw.lstrip()
             else:
                 tmp = raw
-            line = unescape(re.sub(r"\s+", " ", tmp))
+            if self.ispref:
+                line = unescape(tmp)
+            else:
+                line = unescape(re.sub(r"\s+", " ", tmp))
             self.text[-1] += line
             if self.ishead:
                 self.idhead.add(len(self.text)-1)
@@ -279,6 +291,8 @@ class HTMLtoLines(HTMLParser):
                 self.idbull.add(len(self.text)-1)
             elif self.isinde:
                 self.idinde.add(len(self.text)-1)
+            elif self.ispref:
+                self.idpref.add(len(self.text)-1)
 
     def get_lines(self, width=0):
         text = []
@@ -292,6 +306,12 @@ class HTMLtoLines(HTMLParser):
             elif n in self.idbull:
                 tmp = textwrap.wrap(i, width - 3)
                 text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
+            elif n in self.idpref:
+                tmp = i.splitlines()
+                wraptmp = []
+                for line in tmp:
+                    wraptmp += [j for j in textwrap.wrap(line, width - 6)]
+                text += ["   "+j for j in wraptmp] + [""]
             else:
                 text += textwrap.wrap(i, width) + [""]
         return text, self.imgs
