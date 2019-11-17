@@ -863,7 +863,11 @@ def reader(stdscr, ebook, index, width, y, pctg, sect):
 
     stdscr.clear()
     stdscr.refresh()
-    pad.refresh(y, 0, 0, x, rows-1, x+width)
+    # try except to be more flexible on terminal resize
+    try:
+        pad.refresh(y, 0, 0, x, rows-1, x+width)
+    except curses.error:
+        pass
 
     if sect != "":
         y = toc_secid.get(sect, 0)
