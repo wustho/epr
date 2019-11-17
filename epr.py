@@ -817,11 +817,19 @@ def reader(stdscr, ebook, index, width, y, pctg):
         suff = " <-- End     "
     else:
         suff = " <-- End --> "
-    pad.addstr(n, width//2 - 7, suff, curses.A_REVERSE)
+    # try except to be more flexible on terminal resize
+    try:
+        pad.addstr(n, width//2 - 7, suff, curses.A_REVERSE)
+    except curses.error:
+        pass
 
     stdscr.clear()
     stdscr.refresh()
-    pad.refresh(y,0, 0,x, rows-1,x+width)
+    # try except to be more flexible on terminal resize
+    try:
+        pad.refresh(y,0, 0,x, rows-1,x+width)
+    except curses.error:
+        pass
 
     countstring = ""
     while True:
