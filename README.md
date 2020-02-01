@@ -2,7 +2,7 @@
 
 ![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
-Terminal/CLI Epub reader written in Python 3.7 with features:
+Terminal/CLI Epub reader written in Python 3.6 with features:
 
 - Remembers last read file (just run `epr` without any argument)
 - Remembers last reading state for each file (per file saved state written to `$HOME/.config/epr/config` or `$HOME/.epr` respectively depending on availability)
