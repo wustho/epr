@@ -54,10 +54,10 @@ import textwrap
 import json
 import tempfile
 import shutil
+import subprocess
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from html import unescape
-from subprocess import run
 from html.parser import HTMLParser
 from difflib import SequenceMatcher as SM
 
@@ -611,15 +611,17 @@ def find_media_viewer():
         "firefox"
     ]
     if sys.platform == "win32":
-        VWR = "start"
+        VWR = ["start"]
     elif sys.platform == "darwin":
-        VWR = "open"
+        VWR = ["open"]
     else:
         for i in VWR_LIST:
             if shutil.which(i) is not None:
-                VWR = i
-                if VWR == "gio": VWR += " open"
+                VWR = [i]
                 break
+
+    if VWR[0] in {"gio"}:
+        VWR.append("open")
 
 
 def open_media(scr, epub, src):
@@ -628,7 +630,13 @@ def open_media(scr, epub, src):
     try:
         with os.fdopen(fd, "wb") as tmp:
             tmp.write(epub.file.read(src))
-        run(VWR + " " + path, shell=True)
+        # run(VWR + " " + path, shell=True)
+        subprocess.call(
+            VWR + [path],
+            # shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
         k = scr.getch()
     finally:
         os.remove(path)
