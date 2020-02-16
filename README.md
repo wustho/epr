@@ -35,10 +35,16 @@ Or simply (be careful if you already have package named `epr` installed):
 $ pip3 install git+https://github.com/wustho/epr.git
 ```
 
-Or via chocolatey (maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)):
+Via chocolatey (maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)):
 
 ```shell
 $ choco install epr
+```
+
+From the AUR (maintained by [jneidel](https://aur.archlinux.org/packages/epr-git/)):
+
+```shell
+$ yay -S epr-git
 ```
 
 ## Quickly Read from History
