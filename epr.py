@@ -600,6 +600,7 @@ def find_media_viewer():
     VWR_LIST = [
         "feh",
         "gio",
+        "sxiv",
         "gnome-open",
         "gvfs-open",
         "xdg-open",
