@@ -375,7 +375,7 @@ def pgend(tot, winhi):
         return 0
 
 
-def toc(stdscr, src, index, width):
+def toc(stdscr, src, index):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
     Y, X = 2, 2
@@ -909,7 +909,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             elif k in CH_END:
                 y = pgend(totlines, rows)
             elif k in TOC:
-                fllwd = toc(stdscr, toc_src, index, width)
+                fllwd = toc(stdscr, toc_src, index)
                 if fllwd is not None:
                     if fllwd in {curses.KEY_RESIZE}|HELP|META:
                         k = fllwd
@@ -1146,7 +1146,7 @@ def main():
         if val != 0 and len({"-r"} & set(args)) == 0:
             file = cand
         else:
-            print("\nReading history:")
+            print("Reading history:")
             dig = len(str(len(STATE.keys())+1))
             for n, i in enumerate(STATE.keys()):
                 print(str(n+1).rjust(dig) + ("* " if STATE[i]["lastread"] == "1" else "  ") + i)
