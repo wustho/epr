@@ -1,4 +1,4 @@
-# `$ epr` [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# `$ epr`
 
 ![Screenshot](https://raw.githubusercontent.com/wustho/epr/master/screenshot.png)
 
@@ -140,6 +140,8 @@ Key Binding:
     Enlarge         : +
     ToC             : TAB       t
     Metadata        : m
+    Mark pos to n   : b[n]
+    Jump to pos n   : `[n]
     Switch colorsch : [default=0, dark=1, light=2]c
 ```
 

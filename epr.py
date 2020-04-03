@@ -33,6 +33,8 @@ Key Binding:
     Enlarge         : +
     ToC             : TAB       t
     Metadata        : m
+    Mark pos to n   : b[n]
+    Jump to pos n   : `[n]
     Switch colorsch : [default=0, dark=1, light=2]c
 """
 
@@ -77,6 +79,8 @@ TOC = {9, ord("\t"), ord("t")}
 FOLLOW = {10}
 QUIT = {ord("q"), 3, 27, 304}
 HELP = {ord("?")}
+MARKPOS = ord("b")
+JUMPTOPOS = ord("`")
 COLORSWITCH = ord("c")
 
 
@@ -94,6 +98,7 @@ LINEPRSRV = 0  # default = 2
 COLORSUPPORT = False
 SEARCHPATTERN = None
 VWR = None
+JUMPLIST = {}
 
 
 class Epub:
@@ -994,6 +999,23 @@ def reader(stdscr, ebook, index, width, y, pctg):
                 if impath != "":
                     imgsrc = dots_path(chpath, impath)
                     k = open_media(pad, ebook, imgsrc)
+                    continue
+            elif k == MARKPOS:
+                jumnum = pad.getch()
+                if jumnum in range(49, 58):
+                    JUMPLIST[chr(jumnum)] = [index, width, y, y/totlines]
+                else:
+                    k = jumnum
+                    continue
+            elif k == JUMPTOPOS:
+                jumnum = pad.getch()
+                if jumnum in range(49, 58) and chr(jumnum) in JUMPLIST.keys():
+                    tojumpidxdiff = JUMPLIST[chr(jumnum)][0]-index
+                    tojumpy = JUMPLIST[chr(jumnum)][2]
+                    tojumpctg = None if JUMPLIST[chr(jumnum)][1] == width else JUMPLIST[chr(jumnum)][3]
+                    return tojumpidxdiff, width, tojumpy, tojumpctg
+                else:
+                    k = jumnum
                     continue
             elif k == COLORSWITCH and COLORSUPPORT and countstring in {"", "0", "1", "2"}:
                 if countstring == "":
