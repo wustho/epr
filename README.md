@@ -19,8 +19,8 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
 - Supports regex search only
 - Supports only horizontal left-to-right text
 - Doesn't support hyperlinks
+- <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
 - Some known issues mentioned below
-- Customizing keybindings & colorscheme done inside the source code itself (no separated config file)
 
 ## Dependencies
 
@@ -87,62 +87,20 @@ To see available values assigned to colors, you can run this one-liner on bash:
 $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \e[0m" $i; i=$((i+1)); done; echo; done
 ```
 
-## Vanilla or Markdown?
+## Checkout [`epy`](https://github.com/wustho/epy)!
 
-[UNMAINTAINED]
+It's just a fork of this `epr` with little more features:
 
-If you'd like to read epub in markdown format, which _requires_ additional dependency: `html2text`, checkout `markdown` branch of this repo or simply:
+- FictionBook (.fb2) support
+- Reading progress percentage
+- Bookmarks
+- External dictionary integration
+- Table of contents scheme like regular ebook reader
+
+Install it with:
 
 ```shell
-$ pip3 install git+https://github.com/wustho/epr.git@markdown
-```
-
-Useful when you read more nonfiction reference epub (like manual or documentation) than fiction one.
-
-## Reading Progress Indicator
-
-If you need reading progress indicator and you don't mind a little more startup time, checkout [epy](https://github.com/wustho/epy).
-It's just my fork of this `epr`, but with one extra feature: **Reading Progress Percentage**.
-
-## Usages
-
-```
-Usages:
-    epr             read last epub
-    epr EPUBFILE    read EPUBFILE
-    epr STRINGS     read matched STRINGS from history
-    epr NUMBER      read file from history
-                    with associated NUMBER
-
-Options:
-    -r              print reading history
-    -d              dump epub
-    -h, --help      print short, long help
-
-Key Binding:
-    Help            : ?
-    Quit            : q
-    Scroll down     : DOWN      j
-    Scroll up       : UP        k
-    Page down       : PGDN      RIGHT   SPC
-    Page up         : PGUP      LEFT
-    Next chapter    : n
-    Prev chapter    : p
-    Beginning of ch : HOME      g
-    End of ch       : END       G
-    Open image      : o
-    Search          : /
-    Next Occurence  : n
-    Prev Occurence  : N
-    Toggle width    : =
-    Set width       : [count]=
-    Shrink          : -
-    Enlarge         : +
-    ToC             : TAB       t
-    Metadata        : m
-    Mark pos to n   : b[n]
-    Jump to pos n   : `[n]
-    Switch colorsch : [default=0, dark=1, light=2]c
+$ pip3 install git+https://github.com/wustho/epy
 ```
 
 ## Known Issues
@@ -162,9 +120,7 @@ Key Binding:
    $ epr -d the_girl_next_door.epub | grep Overdue -C 2
    ```
 
-2. <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
-
-3. Some TOC issues:
+2. Some TOC issues (Checkout [`epy`](https://github.com/wustho/epy) if you're bothered with these issues):
 
    - "-" chapters in TOC
 
@@ -190,16 +146,6 @@ Key Binding:
 
      But don't worry, you should not miss any part to read. This just won't let you navigate
      to some points using TOC.
-
-   If you feel bothered by these 2 TOC issues, checkout branch `commontoc` or install via:
-
-   ```shell
-   $ pip3 install git+https://github.com/wustho/epr.git@commontoc
-   ```
-
-   which will give you TOC behavior like in many common readers.
-
-   NOTE: I'm not merging `commontoc` to `master` since `master` already does most of its job efficiently and (supposedly, I'm not doing any test) faster. It just navigates between files inside epub rather than pre-defined sections like `commontoc` does.
 
 ## Inspirations
 
