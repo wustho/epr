@@ -39,7 +39,7 @@ Key Binding:
 """
 
 
-__version__ = "2.3.3"
+__version__ = "2.3.4"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -910,7 +910,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             elif k in SCROLL_DOWN:
                 if count > 1:
                     svline = y + rows - 1
-                if y + count < totlines - rows:
+                if y + count <= totlines - rows:
                     y += count
                 elif index != len(contents)-1:
                     return 1, width, 0, None
