@@ -39,7 +39,7 @@ Key Binding:
 """
 
 
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -692,7 +692,11 @@ def searching(stdscr, pad, src, width, y, ch, tot):
 
             stat.clear()
             stat.addstr(0, 0, " Regex:", curses.A_REVERSE)
-            stat.addstr(0, 7, SEARCHPATTERN)
+            # stat.addstr(0, 7, SEARCHPATTERN)
+            stat.addstr(
+                    0, 7,
+                    SEARCHPATTERN if 7+len(SEARCHPATTERN) < cols else "..."+SEARCHPATTERN[7-cols+4:]
+                    )
             stat.refresh()
 
     if SEARCHPATTERN in {"?", "/"}:
@@ -726,7 +730,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                     return -1
 
                 stdscr.clear()
-                stdscr.addstr(rows-1, 0, " Finished searching: " + SEARCHPATTERN[1:] + " ", curses.A_REVERSE)
+                stdscr.addstr(rows-1, 0, " Finished searching: " + SEARCHPATTERN[1:cols-22] + " ", curses.A_REVERSE)
                 stdscr.refresh()
                 pad.refresh(y,0, 0,x, rows-2,x+width)
                 s = pad.getch()
