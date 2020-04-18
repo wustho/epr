@@ -912,8 +912,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     svline = y + rows - 1
                 if y + count <= totlines - rows:
                     y += count
-                elif index != len(contents)-1:
+                elif y == totlines - rows and index != len(contents)-1:
                     return 1, width, 0, None
+                else:
+                    y = totlines - rows
             elif k in PAGE_DOWN:
                 if totlines - y - LINEPRSRV > rows:
                     # y = pgdn(y, totlines, rows, LINEPRSRV, count)
