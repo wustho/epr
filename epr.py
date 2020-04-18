@@ -39,7 +39,7 @@ Key Binding:
 """
 
 
-__version__ = "2.3.1"
+__version__ = "2.3.2"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -704,7 +704,17 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         return y
 
     found = []
-    pattern = re.compile(SEARCHPATTERN[1:], re.IGNORECASE)
+    try:
+        pattern = re.compile(SEARCHPATTERN[1:], re.IGNORECASE)
+    except re.error:
+        stdscr.addstr(rows-1, 0, "Invalid Regex!", curses.A_REVERSE)
+        SEARCHPATTERN = None
+        s = stdscr.getch()
+        if s in QUIT:
+            return y
+        else:
+            return s
+
     for n, i in enumerate(src):
         for j in pattern.finditer(i):
             found.append([n, j.span()[0], j.span()[1] - j.span()[0]])
@@ -965,7 +975,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             #         return 0, cols - 2, 0, y/totlines
             elif k == ord("/"):
                 fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
-                if fs == curses.KEY_RESIZE:
+                if fs in {curses.KEY_RESIZE, ord("/")}:
                     k = fs
                     continue
                 elif SEARCHPATTERN is not None:
