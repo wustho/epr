@@ -39,7 +39,7 @@ Key Binding:
 """
 
 
-__version__ = "2.3.2"
+__version__ = "2.3.3"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -880,6 +880,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
         pass
 
     countstring = ""
+    svline = False
     while True:
         if countstring == "":
             count = 1
@@ -895,6 +896,8 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     savestate(ebook.path, index, width, y, y/totlines)
                     sys.exit()
             elif k in SCROLL_UP:
+                if count > 1:
+                    svline = y - 1
                 if y >= count:
                     y -= count
                 elif index != 0:
@@ -905,6 +908,8 @@ def reader(stdscr, ebook, index, width, y, pctg):
                 else:
                     y = pgup(y, rows, LINEPRSRV, count)
             elif k in SCROLL_DOWN:
+                if count > 1:
+                    svline = y + rows - 1
                 if y + count < totlines - rows:
                     y += count
                 elif index != len(contents)-1:
@@ -1056,6 +1061,8 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     return 0, width, y, None
             countstring = ""
 
+        if svline:
+            pad.chgat(svline, 0, width, curses.A_UNDERLINE)
         try:
             stdscr.clear()
             stdscr.addstr(0, 0, countstring)
@@ -1067,6 +1074,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
         except curses.error:
             pass
         k = pad.getch()
+
+        if svline:
+            pad.chgat(svline, 0, width, curses.A_NORMAL)
+            svline = False
 
 
 def preread(stdscr, file):
