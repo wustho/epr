@@ -39,7 +39,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.5"
+__version__ = "2.4.6"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -671,7 +671,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                 curses.echo(0)
                 curses.curs_set(0)
                 SEARCHPATTERN = None
-                return y
+                return None, y
             elif ipt == 10:
                 SEARCHPATTERN = "/"+SEARCHPATTERN
                 stat.clear()
@@ -688,7 +688,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                 curses.echo(0)
                 curses.curs_set(0)
                 SEARCHPATTERN = None
-                return curses.KEY_RESIZE
+                return curses.KEY_RESIZE, None
             else:
                 SEARCHPATTERN += chr(ipt)
 
@@ -703,7 +703,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
 
     if SEARCHPATTERN in {"?", "/"}:
         SEARCHPATTERN = None
-        return y
+        return None, y
 
     found = []
     try:
@@ -713,9 +713,9 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         SEARCHPATTERN = None
         s = stdscr.getch()
         if s in QUIT:
-            return y
+            return None, y
         else:
-            return s
+            return s, None
 
     for n, i in enumerate(src):
         for j in pattern.finditer(i):
@@ -723,9 +723,9 @@ def searching(stdscr, pad, src, width, y, ch, tot):
 
     if found == []:
         if SEARCHPATTERN[0] == "/" and ch + 1 < tot:
-            return 1
+            return None, 1
         elif SEARCHPATTERN[0] == "?" and ch > 0:
-            return -1
+            return None, -1
         else:
             s = 0
             while True:
@@ -733,13 +733,13 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                     SEARCHPATTERN = None
                     stdscr.clear()
                     stdscr.refresh()
-                    return y
+                    return None, y
                 elif s == ord("n") and ch == 0:
                     SEARCHPATTERN = "/"+SEARCHPATTERN[1:]
-                    return 1
+                    return None, 1
                 elif s == ord("N") and ch +1 == tot:
                     SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
-                    return -1
+                    return None, -1
 
                 stdscr.clear()
                 stdscr.addstr(rows-1, 0, " Finished searching: " + SEARCHPATTERN[1:cols-22] + " ", curses.A_REVERSE)
@@ -750,7 +750,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
     sidx = len(found) - 1
     if SEARCHPATTERN[0] == "/":
         if y > found[-1][0]:
-            return 1
+            return None, 1
         for n, i in enumerate(found):
             if i[0] >= y:
                 sidx = n
@@ -768,12 +768,12 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                 pad.chgat(i[0], i[1], i[2], pad.getbkgd())
             stdscr.clear()
             stdscr.refresh()
-            return y
+            return None, y
         elif s == ord("n"):
             SEARCHPATTERN = "/"+SEARCHPATTERN[1:]
             if sidx == len(found) - 1:
                 if ch + 1 < tot:
-                    return 1
+                    return None, 1
                 else:
                     s = 0
                     msg = " Finished searching: " + SEARCHPATTERN[1:] + " "
@@ -788,7 +788,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
             SEARCHPATTERN = "?"+SEARCHPATTERN[1:]
             if sidx == 0:
                 if ch > 0:
-                    return -1
+                    return None, -1
                 else:
                     s = 0
                     msg = " Finished searching: " + SEARCHPATTERN[1:] + " "
@@ -800,7 +800,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                     len(found),
                     ch+1, tot)
         elif s == curses.KEY_RESIZE:
-            return s
+            return s, None
 
         while found[sidx][0] not in list(range(y, y+rows-1)):
             if found[sidx][0] > y:
@@ -993,14 +993,14 @@ def reader(stdscr, ebook, index, width, y, pctg):
             #     else:
             #         return 0, cols - 2, 0, y/totlines
             elif k == ord("/"):
-                fs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
-                if fs in {curses.KEY_RESIZE, ord("/")}:
-                    k = fs
+                ks, idxs = searching(stdscr, pad, src_lines, width, y, index, len(contents))
+                if ks in {curses.KEY_RESIZE, ord("/")}:
+                    k = ks
                     continue
                 elif SEARCHPATTERN is not None:
-                    return fs, width, 0, None
-                else:
-                    y = fs
+                    return idxs, width, 0, None
+                elif idxs is not None:
+                    y = idxs
             elif k == ord("o") and VWR is not None:
                 gambar, idx = [], []
                 for n, i in enumerate(src_lines[y:y+rows]):
