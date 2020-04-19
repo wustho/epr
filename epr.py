@@ -437,8 +437,8 @@ def toc(stdscr, src, index):
                 if index + 1 >= totlines:
                     index = totlines - 1
             elif key_toc in FOLLOW:
-                if index == oldindex:
-                    break
+                # if index == oldindex:
+                #     break
                 return index
             # elif key_toc in PAGE_UP:
             #     index -= 3
