@@ -41,7 +41,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.7"
+__version__ = "2.4.8"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -965,10 +965,8 @@ def reader(stdscr, ebook, index, width, y, pctg):
                 k = help(stdscr)
                 if k in {curses.KEY_RESIZE}|META|TOC:
                     continue
-            elif k == WIDEN:
+            elif k == WIDEN and (width + count) < cols - 4:
                 width += count
-                if width >= cols - 2:
-                    width = cols - 2
                 return 0, width, 0, y/totlines
             elif k == SHRINK:
                 width -= count
@@ -978,16 +976,16 @@ def reader(stdscr, ebook, index, width, y, pctg):
             elif k == WIDTH:
                 if countstring == "":
                     # if called without a count, toggle between 80 cols and full width
-                    if width != 80 and cols - 2 >= 80:
+                    if width != 80 and cols - 4 >= 80:
                         return 0, 80, 0, y/totlines
                     else:
-                        return 0, cols - 2, 0, y/totlines
+                        return 0, cols - 4, 0, y/totlines
                 else:
                     width = count
                 if width < 20:
                     width = 20
-                elif width >= cols -2:
-                    width = cols - 2
+                elif width >= cols - 4:
+                    width = cols - 4
                 return 0, width, 0, y/totlines
             # elif k == ord("0"):
             #     if width != 80 and cols - 2 >= 80:
@@ -1073,8 +1071,8 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     curses.resize_term(rows, cols)
                 if cols < 22 or rows < 12:
                     sys.exit("ERR: Screen was too small (min 22cols x 12rows).")
-                if cols <= width:
-                    return 0, cols - 2, 0, y/totlines
+                if cols <= width + 4:
+                    return 0, cols - 4, 0, y/totlines
                 else:
                     return 0, width, y, None
             countstring = ""
@@ -1131,8 +1129,8 @@ def preread(stdscr, file):
         width = 80
         pctg = None
 
-    if cols <= width:
-        width = cols - 2
+    if cols <= width + 4:
+        width = cols - 4
         if "pctg" in STATE[epub.path]:
             pctg = float(STATE[epub.path]["pctg"])
 
