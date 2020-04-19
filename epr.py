@@ -39,7 +39,7 @@ Key Binding:
 """
 
 
-__version__ = "2.3.5"
+__version__ = "2.4.5"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -65,6 +65,8 @@ from difflib import SequenceMatcher as SM
 # key bindings
 SCROLL_DOWN = {curses.KEY_DOWN, ord("j")}
 SCROLL_UP = {curses.KEY_UP, ord("k")}
+HALF_DOWN = {4}
+HALF_UP = {21}
 PAGE_DOWN = {curses.KEY_NPAGE, ord("l"), ord(" "), curses.KEY_RIGHT}
 PAGE_UP = {curses.KEY_PPAGE, ord("h"), curses.KEY_LEFT}
 CH_NEXT = {ord("n")}
@@ -880,7 +882,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
         pass
 
     countstring = ""
-    svline = False
+    svline = "dontsave"
     while True:
         if countstring == "":
             count = 1
@@ -924,6 +926,14 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     y += rows - LINEPRSRV
                 elif index != len(contents)-1:
                     return 1, width, 0, None
+            elif k in HALF_UP:
+                countstring = str(rows//2)
+                k = list(SCROLL_UP)[0]
+                continue
+            elif k in HALF_DOWN:
+                countstring = str(rows//2)
+                k = list(SCROLL_DOWN)[0]
+                continue
             elif k in CH_NEXT:
                 if index + count < len(contents) - 1:
                     return count, width, 0, None
@@ -1065,7 +1075,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
                     return 0, width, y, None
             countstring = ""
 
-        if svline:
+        if svline != "dontsave":
             pad.chgat(svline, 0, width, curses.A_UNDERLINE)
         try:
             stdscr.clear()
@@ -1079,9 +1089,9 @@ def reader(stdscr, ebook, index, width, y, pctg):
             pass
         k = pad.getch()
 
-        if svline:
+        if svline != "dontsave":
             pad.chgat(svline, 0, width, curses.A_NORMAL)
-            svline = False
+            svline = "dontsave"
 
 
 def preread(stdscr, file):
