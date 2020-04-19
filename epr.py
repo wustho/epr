@@ -17,6 +17,8 @@ Key Binding:
     Quit            : q
     Scroll down     : DOWN      j
     Scroll up       : UP        k
+    Half screen up  : C-u
+    Half screen dn  " C-d
     Page down       : PGDN      RIGHT   SPC
     Page up         : PGUP      LEFT
     Next chapter    : n
@@ -39,7 +41,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.6"
+__version__ = "2.4.7"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __url__ = "https://github.com/wustho/epr"
@@ -1069,6 +1071,8 @@ def reader(stdscr, ebook, index, width, y, pctg):
                 else:
                     rows, cols = stdscr.getmaxyx()
                     curses.resize_term(rows, cols)
+                if cols < 22 or rows < 12:
+                    sys.exit("ERR: Screen was too small (min 22cols x 12rows).")
                 if cols <= width:
                     return 0, cols - 2, 0, y/totlines
                 else:
@@ -1141,6 +1145,8 @@ def preread(stdscr, file):
 
 
 def main():
+    termc, termr = shutil.get_terminal_size()
+
     args = []
     if sys.argv[1:] != []:
         args += sys.argv[1:]
@@ -1238,6 +1244,8 @@ def main():
         sys.exit()
 
     else:
+        if termc < 22 or termr < 12:
+            sys.exit("ERR: Screen was too small (min 22cols x 12rows).")
         curses.wrapper(preread, file)
 
 
