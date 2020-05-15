@@ -18,6 +18,7 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
 - Minimum width: 22 cols
 - Supports regex search only
 - Supports only horizontal left-to-right text
+- Currently, only supports language with latin alphabet (see [issue30](https://github.com/wustho/epr/issues/30)) 
 - Doesn't support hyperlinks
 - <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
 - Some known issues mentioned below
