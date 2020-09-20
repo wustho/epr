@@ -93,6 +93,7 @@ $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \
 It's just a fork of this `epr` with little more features:
 
 - FictionBook (.fb2) support
+- Mobi (.mobi) support (but no image is supported in mobi)
 - Reading progress percentage
 - Bookmarks
 - External dictionary integration
