@@ -25,7 +25,7 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
 
 ## Dependencies
 
-- `curses` (Linux) or `windows-curses` (Windows)
+- Windows: `windows-curses`
 
 ## Installation
 
@@ -46,6 +46,22 @@ From the AUR (maintained by [jneidel](https://aur.archlinux.org/packages/epr-git
 
 ```shell
 $ yay -S epr-git
+```
+
+## Checkout [`epy`](https://github.com/wustho/epy)!
+
+It's just a fork of this `epr` with little more features:
+
+- Formats supported: epub, epub3, fb2, mobi, azw3.
+- Reading progress percentage
+- Bookmarks
+- External dictionary integration
+- Table of contents scheme like regular ebook reader
+
+Install it with:
+
+```shell
+$ pip3 install git+https://github.com/wustho/epy
 ```
 
 ## Quickly Read from History
@@ -86,23 +102,6 @@ To see available values assigned to colors, you can run this one-liner on bash:
 
 ```shell
 $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \e[0m" $i; i=$((i+1)); done; echo; done
-```
-
-## Checkout [`epy`](https://github.com/wustho/epy)!
-
-It's just a fork of this `epr` with little more features:
-
-- FictionBook (.fb2) support
-- Mobi (.mobi) support (but no image is supported in mobi)
-- Reading progress percentage
-- Bookmarks
-- External dictionary integration
-- Table of contents scheme like regular ebook reader
-
-Install it with:
-
-```shell
-$ pip3 install git+https://github.com/wustho/epy
 ```
 
 ## Known Issues
