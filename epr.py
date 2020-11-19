@@ -44,6 +44,7 @@ Key Binding:
 __version__ = "2.4.8"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
+__email__ = "benawiadha@gmail.com"
 __url__ = "https://github.com/wustho/epr"
 
 

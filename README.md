@@ -29,24 +29,37 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
 
 ## Installation
 
-Clone this repo, tweak `epr.py` as much as you see fit, rename it to `epr`, make it executable and put it somewhere in `PATH`.
-Or simply (be careful if you already have package named `epr` installed):
+### Via PyPI
+
+```shell
+$ pip3 install epr-reader
+```
+
+### Via Pip+Git
 
 ```shell
 $ pip3 install git+https://github.com/wustho/epr.git
 ```
 
-Via chocolatey (maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)):
+### Via Chocolatey
+
+maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)
 
 ```shell
 $ choco install epr
 ```
 
-From the AUR (maintained by [jneidel](https://aur.archlinux.org/packages/epr-git/)):
+### Via AUR
+
+maintained by [jneidel](https://aur.archlinux.org/packages/epr-git/)
 
 ```shell
 $ yay -S epr-git
 ```
+
+### Manually
+
+Clone this repo, tweak `epr.py` as much as you see fit, rename it to `epr`, make it executable and put it somewhere in `PATH`.
 
 ## Checkout [`epy`](https://github.com/wustho/epy)!
 
