@@ -70,6 +70,8 @@ It's just a fork of this `epr` with little more features:
 - Bookmarks
 - External dictionary integration
 - Table of contents scheme like regular ebook reader
+- Inline formats: **bold** and _italic_ (depend on terminal and font capability. Italic only supported in python>=3.7)
+- Text-to-Speech (with additional setup)
 
 Install it with:
 
