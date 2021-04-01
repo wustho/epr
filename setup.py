@@ -1,22 +1,25 @@
 import sys
 from setuptools import setup
-from epr import __version__, __author__, __email__, __url__, __license__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+requirements = []
+if sys.platform == "win32":
+    requirements.append("windows-curses")
+
 setup(
     name="epr-reader",
-    version=__version__,
+    version="2.4.9",
     description="Terminal/CLI Epub Reader",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url=__url__,
-    author=__author__,
-    author_email=__email__,
-    license=__license__,
+    url="https://github.com/wustho/epr",
+    author="Benawi Adha",
+    author_email="benawiadha@gmail.com",
+    license="MIT",
     keywords=["EPUB", "EPUB3", "CLI", "Terminal", "Reader"],
-    install_requires=["windows-curses"] if sys.platform == "win32" else [],
+    install_requires=requirements,
     python_requires="~=3.6",
     py_modules=["epr"],
     entry_points={ "console_scripts": ["epr=epr:main"] },
