@@ -10,7 +10,7 @@ if sys.platform == "win32":
 
 setup(
     name="epr-reader",
-    version="2.4.9",
+    version="2.4.10",
     description="Terminal/CLI Epub Reader",
     long_description=long_description,
     long_description_content_type="text/markdown",

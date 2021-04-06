@@ -41,7 +41,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.9"
+__version__ = "2.4.10"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __email__ = "benawiadha@gmail.com"
@@ -242,9 +242,13 @@ class HTMLtoLines(HTMLParser):
             self.text[-1] += "^{"
         elif tag == "sub":
             self.text[-1] += "_{"
-        elif tag == "image":
+        # NOTE: "img" and "image"
+        # In HTML, both are startendtag (no need endtag)
+        # but in XHTML both need endtag
+        elif tag in {"img", "image"}:
             for i in attrs:
-                if i[0] == "xlink:href":
+                if (tag == "img" and i[0] == "src")\
+                   or (tag == "image" and i[0].endswith("href")):
                     self.text.append("[IMG:{}]".format(len(self.imgs)))
                     self.imgs.append(unquote(i[1]))
 
@@ -253,7 +257,8 @@ class HTMLtoLines(HTMLParser):
             self.text += [""]
         elif tag in {"img", "image"}:
             for i in attrs:
-                if (tag == "img" and i[0] == "src") or (tag == "image" and i[0] == "xlink:href"):
+                if (tag == "img" and i[0] == "src")\
+                   or (tag == "image" and i[0].endswith("href")):
                     self.text.append("[IMG:{}]".format(len(self.imgs)))
                     self.imgs.append(unquote(i[1]))
                     self.text.append("")
@@ -281,7 +286,7 @@ class HTMLtoLines(HTMLParser):
             self.isbull = False
         elif tag in {"sub", "sup"}:
             self.text[-1] += "}"
-        elif tag == "image":
+        elif tag in {"img", "image"}:
             self.text.append("")
 
     def handle_data(self, raw):

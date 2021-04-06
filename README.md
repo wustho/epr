@@ -13,7 +13,7 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
 - Supports opening images
 - Dark/Light colorscheme (depends on terminal color capability)
 
-## Limitations
+# Limitations
 
 - Minimum width: 22 cols
 - Supports regex search only
@@ -23,25 +23,25 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
 - <sup>Superscript</sup> and <sub>subscript</sub> displayed as `^{Superscript}` and `_{subscript}`.
 - Some known issues mentioned below
 
-## Dependencies
+# Dependencies
 
 - Windows: `windows-curses`
 
-## Installation
+# Installation
 
-### Via PyPI
+## Via PyPI
 
 ```shell
 $ pip3 install epr-reader
 ```
 
-### Via Pip+Git
+## Via Pip+Git
 
 ```shell
 $ pip3 install git+https://github.com/wustho/epr.git
 ```
 
-### Via Chocolatey
+## Via Chocolatey
 
 maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)
 
@@ -49,7 +49,7 @@ maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/t
 $ choco install epr
 ```
 
-### Via AUR
+## Via AUR
 
 maintained by [jneidel](https://aur.archlinux.org/packages/epr-git/)
 
@@ -57,11 +57,11 @@ maintained by [jneidel](https://aur.archlinux.org/packages/epr-git/)
 $ yay -S epr-git
 ```
 
-### Manually
+## Manually
 
 Clone this repo, tweak `epr.py` as much as you see fit, rename it to `epr`, make it executable and put it somewhere in `PATH`.
 
-## Checkout [`epy`](https://github.com/wustho/epy)!
+# Checkout [`epy`](https://github.com/wustho/epy)!
 
 It's just a fork of this `epr` with little more features:
 
@@ -79,7 +79,7 @@ Install it with:
 $ pip3 install git+https://github.com/wustho/epy
 ```
 
-## Quickly Read from History
+# Quickly Read from History
 
 Rather than invoking `epr /path/to/file` each time you are going to read, you might find it easier to do just `epr STRINGS.`
 
@@ -93,11 +93,11 @@ If `STRINGS` is not any file, `epr` will choose from reading history, best match
 
 Run `epr -r` to show list of all reading history.
 
-## Opening an Image
+# Opening an Image
 
 Just hit `o` when `[IMG:n]` (_n_ is any number) comes up on a page. If there's only one of those, it will automatically open the image using viewer, but if there are more than one, cursor will appear to help you choose which image then press `RET` to open it and `q` to cancel.
 
-## Colorscheme
+# Colorscheme
 
 This is just a simple colorscheme involving foreground dan background color only, no syntax highlighting.
 You can cycle color between default terminal color, dark or light respectively by pressing `c`.
@@ -119,7 +119,7 @@ To see available values assigned to colors, you can run this one-liner on bash:
 $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \e[0m" $i; i=$((i+1)); done; echo; done
 ```
 
-## Known Issues
+# Known Issues
 
 1. Search function can't find occurences that span across multiple lines
 
@@ -163,7 +163,12 @@ $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \
      But don't worry, you should not miss any part to read. This just won't let you navigate
      to some points using TOC.
 
-## Inspirations
+# Inspirations
 
 - https://github.com/aerkalov/ebooklib
 - https://github.com/rupa/epub
+
+# Donation
+
+[PayPal](https://paypal.me/wustho)
+
