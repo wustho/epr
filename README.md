@@ -168,7 +168,7 @@ $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \
 - https://github.com/aerkalov/ebooklib
 - https://github.com/rupa/epub
 
-# Donation
+# Tip Jar
 
 [PayPal](https://paypal.me/wustho)
 
