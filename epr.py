@@ -18,7 +18,7 @@ Key Binding:
     Scroll down     : DOWN      j
     Scroll up       : UP        k
     Half screen up  : C-u
-    Half screen dn  " C-d
+    Half screen dn  : C-d
     Page down       : PGDN      RIGHT   SPC
     Page up         : PGUP      LEFT
     Next chapter    : n
@@ -41,7 +41,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.10"
+__version__ = "2.4.11"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __email__ = "benawiadha@gmail.com"
