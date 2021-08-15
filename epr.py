@@ -41,7 +41,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.11"
+__version__ = "2.4.12"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __email__ = "benawiadha@gmail.com"
@@ -672,7 +672,10 @@ def searching(stdscr, pad, src, width, y, ch, tot):
         stat.addstr(0, 7, SEARCHPATTERN)
         stat.refresh()
         while True:
-            ipt = stat.getch()
+            ipt = stat.get_wch()
+            if type(ipt) == str:
+                ipt = ord(ipt)
+
             if ipt == 27:
                 stat.clear()
                 stat.refresh()
@@ -688,7 +691,7 @@ def searching(stdscr, pad, src, width, y, ch, tot):
                 curses.curs_set(0)
                 break
             # TODO: why different behaviour unix dos or win lin
-            elif ipt in {8, curses.KEY_BACKSPACE}:
+            elif ipt in {8, 127, curses.KEY_BACKSPACE}:
                 SEARCHPATTERN = SEARCHPATTERN[:-1]
             elif ipt == curses.KEY_RESIZE:
                 stat.clear()
