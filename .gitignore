@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-epy_reader.egg-info/*
+epr_reader.egg-info/*
 .venv
 .idea
 build
