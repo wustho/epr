@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="epr-reader",
-    version="2.4.12",
+    version="2.4.13",
     description="Terminal/CLI Epub Reader",
     long_description=long_description,
     long_description_content_type="text/markdown",

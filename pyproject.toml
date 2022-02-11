@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "epr-reader"
-version = "2.4.12"
+version = "2.4.13"
 description = "CLI Ebook Reader"
 authors = ["Benawi Adha <benawiadha@gmail.com>"]
 license = "MIT"

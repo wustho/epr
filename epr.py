@@ -41,7 +41,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.12"
+__version__ = "2.4.13"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __email__ = "benawiadha@gmail.com"
@@ -438,11 +438,11 @@ def toc(stdscr, src, index):
         if key_toc in range(48, 58): # i.e., k is a numeral
             countstring = countstring + chr(key_toc)
         else:
-            if key_toc in SCROLL_UP or key_toc in PAGE_UP:
+            if key_toc in SCROLL_UP|SCROLL_UP_K or key_toc in PAGE_UP:
                 index -= count
                 if index < 0:
                     index = 0
-            elif key_toc in SCROLL_DOWN or key_toc in PAGE_DOWN:
+            elif key_toc in SCROLL_DOWN|SCROLL_DOWN_J or key_toc in PAGE_DOWN:
                 index += count
                 if index + 1 >= totlines:
                     index = totlines - 1
@@ -522,9 +522,9 @@ def meta(stdscr, ebook):
     padhi = rows - 5 - Y - 4 + 1
 
     while key_meta not in META|QUIT:
-        if key_meta in SCROLL_UP and y > 0:
+        if key_meta in SCROLL_UP|SCROLL_UP_K and y > 0:
             y -= 1
-        elif key_meta in SCROLL_DOWN and y < totlines - hi + 6:
+        elif key_meta in SCROLL_DOWN|SCROLL_DOWN_J and y < totlines - hi + 6:
             y += 1
         elif key_meta in PAGE_UP:
             y = pgup(y, padhi)
@@ -576,9 +576,9 @@ def help(stdscr):
     padhi = rows - 5 - Y - 4 + 1
 
     while key_help not in HELP|QUIT:
-        if key_help in SCROLL_UP and y > 0:
+        if key_help in SCROLL_UP|SCROLL_UP_K and y > 0:
             y -= 1
-        elif key_help in SCROLL_DOWN and y < totlines - hi + 6:
+        elif key_help in SCROLL_DOWN|SCROLL_DOWN_J and y < totlines - hi + 6:
             y += 1
         elif key_help in PAGE_UP:
             y = pgup(y, padhi)
