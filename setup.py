@@ -4,10 +4,6 @@ from setuptools import setup
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-requirements = []
-if sys.platform == "win32":
-    requirements.append("windows-curses")
-
 setup(
     name="epr-reader",
     version="2.4.12",
@@ -19,8 +15,8 @@ setup(
     author_email="benawiadha@gmail.com",
     license="MIT",
     keywords=["EPUB", "EPUB3", "CLI", "Terminal", "Reader"],
-    install_requires=requirements,
-    python_requires="~=3.6",
+    install_requires=["windows-curses;platform_system=='Windows'"],
+    python_requires="~=3.3",
     py_modules=["epr"],
     entry_points={ "console_scripts": ["epr=epr:main"] },
     classifiers=[

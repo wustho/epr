@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "epr-reader"
+version = "2.4.12"
+description = "CLI Ebook Reader"
+authors = ["Benawi Adha <benawiadha@gmail.com>"]
+license = "MIT"
+packages = [
+    { include = "epr.py" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.3"
+windows-curses = { version = "*", markers = "platform_system == 'Windows'" }
+
+[tool.poetry.dev-dependencies]
+pynvim = "*"
+
+[tool.mypy]
+strict_optional = true

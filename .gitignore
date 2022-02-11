@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+epy_reader.egg-info/*
+.venv
+.idea
+build
+dist
+tmp/
+.coverage
