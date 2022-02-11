@@ -65,13 +65,15 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
 
 It's just a fork of this `epr` with little more features:
 
-- Formats supported: epub, epub3, fb2, mobi, azw3.
+- Formats supported: epub, epub3, fb2, mobi, azw3, url.
 - Reading progress percentage
 - Bookmarks
 - External dictionary integration
 - Table of contents scheme like regular ebook reader
 - Inline formats: **bold** and _italic_ (depend on terminal and font capability. Italic only supported in python>=3.7)
 - Text-to-Speech (with additional setup)
+- Page flip animation
+- Seamless between chapter
 
 Install it with:
 
@@ -127,7 +129,8 @@ $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \
    So works more effectively for finding word or letter rather than long phrase or sentence.
 
    As workarounds, You can increase text area width to increase its reach or dump
-  the content of epub using `-d` option, which will dump each paragraph into a single line separated by empty line (or lines depending on the epub), to be later piped into `grep`, `rg` etc. Pretty useful to find book quotes.
+   the content of epub using `-d` option, which will dump each paragraph into a single line separated by empty line
+   (or lines depending on the epub), to be later piped into `grep`, `rg` etc. Pretty useful to find book quotes.
 
    Example:
 
@@ -162,6 +165,11 @@ $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \
 
      But don't worry, you should not miss any part to read. This just won't let you navigate
      to some points using TOC.
+
+   - Sometimes page flipping itself to new chapter when scrolling
+
+     This might be disorienting. To avoid this issue, you can use [`epy`](https://github.com/wustho/epy) instead
+     which fixed this issue by setting its config `SeamlessBetweenChapters`.
 
 ## Inspirations
 
