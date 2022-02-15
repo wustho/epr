@@ -1,0 +1,26 @@
+name: Build and Release Windows Binary
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - v**
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install windows-curses pyinstaller
+      - name: Build binary
+        run: |
+          pyinstaller --onefile --name epr-win epr.py
+      - name: Release Windows Binary
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./dist/epr-win.exe
+          token: ${{ secrets.GITHUB_TOKEN }}
