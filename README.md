@@ -41,6 +41,12 @@ Terminal/CLI Epub reader written in Python 3.6 with features:
     $ pip3 install git+https://github.com/wustho/epr.git
     ```
 
+  - Via [Homebrew](https://formulae.brew.sh/formula/epr) for macOS or Linux
+
+    ```shell
+    $ brew install epr
+    ```
+
   - Via Chocolatey
 
     Maintained by [cybercatgurrl](https://github.com/cybercatgurrl/chocolatey-pkgs/tree/master/epr)
