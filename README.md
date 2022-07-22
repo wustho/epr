@@ -123,7 +123,7 @@ $ i=0; for j in {1..16}; do for k in {1..16}; do printf "\e[1;48;05;${i}m %03d \
 
 ## Known Issues
 
-1. Search function can't find occurences that span across multiple lines
+1. Search function can't find occurrences that span across multiple lines
 
    Only capable of finding pattern that span inside a single line, not sentence.
    So works more effectively for finding word or letter rather than long phrase or sentence.
