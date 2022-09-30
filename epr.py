@@ -13,31 +13,31 @@ Options:
     -h, --help      print short, long help
 
 Key Binding:
-    Help            : ?
-    Quit            : q
-    Scroll down     : DOWN      j
-    Scroll up       : UP        k
-    Half screen up  : C-u
-    Half screen dn  : C-d
-    Page down       : PGDN      RIGHT   SPC
-    Page up         : PGUP      LEFT
-    Next chapter    : n
-    Prev chapter    : p
-    Beginning of ch : HOME      g
-    End of ch       : END       G
-    Open image      : o
-    Search          : /
-    Next Occurence  : n
-    Prev Occurence  : N
-    Toggle width    : =
-    Set width       : [count]=
-    Shrink          : -
-    Enlarge         : +
-    ToC             : TAB       t
-    Metadata        : m
-    Mark pos to n   : b[n]
-    Jump to pos n   : `[n]
-    Switch colorsch : [default=0, dark=1, light=2]c
+    Help             : ?
+    Quit             : q
+    Scroll down      : DOWN      j
+    Scroll up        : UP        k
+    Half screen up   : C-u
+    Half screen dn   : C-d
+    Page down        : PGDN      RIGHT   SPC
+    Page up          : PGUP      LEFT
+    Next chapter     : n
+    Prev chapter     : p
+    Beginning of ch  : HOME      g
+    End of ch        : END       G
+    Open image       : o
+    Search           : /
+    Next Occurrence  : n
+    Prev Occurrence  : N
+    Toggle width     : =
+    Set width        : [count]=
+    Shrink           : -
+    Enlarge          : +
+    ToC              : TAB       t
+    Metadata         : m
+    Mark pos to n    : b[n]
+    Jump to pos n    : `[n]
+    Switch colorsch  : [default=0, dark=1, light=2]c
 """
 
 
