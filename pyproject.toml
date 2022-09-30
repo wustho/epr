@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "epr-reader"
-version = "2.4.14"
+version = "2.4.15"
 description = "CLI Ebook Reader"
 readme = "README.md"
 authors = ["Benawi Adha <benawiadha@gmail.com>"]
