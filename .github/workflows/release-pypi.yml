@@ -1,6 +1,7 @@
 name: Upload Tags to PyPI
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - v**
