@@ -1,19 +1,31 @@
 [tool.poetry]
 name = "epr-reader"
-version = "2.4.13"
+version = "2.4.14"
 description = "CLI Ebook Reader"
+readme = "README.md"
 authors = ["Benawi Adha <benawiadha@gmail.com>"]
 license = "MIT"
 packages = [
     { include = "epr.py" },
 ]
+keywords = ["EPUB", "EPUB3", "CLI", "TUI", "Terminal", "Reader"]
+
+[tool.poetry.scripts]
+epr = "epr:main"
 
 [tool.poetry.dependencies]
-python = "^3.3"
+python = "^3.7"
 windows-curses = { version = "*", markers = "platform_system == 'Windows'" }
 
 [tool.poetry.dev-dependencies]
-pynvim = "*"
+build = "^0.8.0"
+twine = "^4.0.1"
+debugpy = "^1.6.3"
+pynvim = "^0.4.3"
 
 [tool.mypy]
 strict_optional = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

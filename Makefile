@@ -1,6 +1,6 @@
 dev:
-	poetry install --no-root
+	poetry install
 
 release:
-	python setup.py sdist bdist_wheel
+	python -m build
 	twine upload --skip-existing dist/*

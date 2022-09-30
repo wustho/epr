@@ -41,7 +41,7 @@ Key Binding:
 """
 
 
-__version__ = "2.4.13"
+__version__ = "2.4.14"
 __license__ = "MIT"
 __author__ = "Benawi Adha"
 __email__ = "benawiadha@gmail.com"
