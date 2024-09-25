@@ -53,7 +53,7 @@ import zipfile
 import sys
 import re
 import os
-import textwrap
+from rich import cells
 import json
 import tempfile
 import shutil
@@ -319,18 +319,18 @@ class HTMLtoLines(HTMLParser):
             if n in self.idhead:
                 text += [i.rjust(width//2 + len(i)//2)] + [""]
             elif n in self.idinde:
-                text += ["   "+j for j in textwrap.wrap(i, width - 3)] + [""]
+                text += ["   "+j for j in cells.chop_cells(i, width - 3)] + [""]
             elif n in self.idbull:
-                tmp = textwrap.wrap(i, width - 3)
+                tmp = cells.chop_cells(i, width - 3)
                 text += [" - "+j if j == tmp[0] else "   "+j for j in tmp] + [""]
             elif n in self.idpref:
                 tmp = i.splitlines()
                 wraptmp = []
                 for line in tmp:
-                    wraptmp += [j for j in textwrap.wrap(line, width - 6)]
+                    wraptmp += [j for j in cells.chop_cells(line, width - 6)]
                 text += ["   "+j for j in wraptmp] + [""]
             else:
-                text += textwrap.wrap(i, width) + [""]
+                text += cells.chop_cells(i, width) + [""]
         return text, self.imgs
 
 
@@ -504,7 +504,7 @@ def meta(stdscr, ebook):
     for i in ebook.get_meta():
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
-        mdata += textwrap.wrap(i[0].upper() + ": " + data, wi - 6)
+        mdata += cells.chop_cells(i[0].upper() + ": " + data, wi - 6)
     src_lines = mdata
     totlines = len(src_lines)
 
