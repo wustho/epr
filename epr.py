@@ -634,7 +634,7 @@ def find_media_viewer():
                 VWR = [i]
                 break
 
-    if VWR[0] in {"gio"}:
+    if VWR is not None and VWR[0] in {"gio"}:
         VWR.append("open")
 
 
