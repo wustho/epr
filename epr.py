@@ -408,6 +408,7 @@ def toc(stdscr, src, index):
     key_toc = 0
 
     totlines = len(src)
+    # print1(src)
     toc.refresh()
     pad = curses.newpad(totlines, wi - 2 )
     if COLORSUPPORT:
@@ -424,7 +425,7 @@ def toc(stdscr, src, index):
 
     for n, i in enumerate(src):
         # strs = "  " + str(n+1).rjust(d) + " " + i[0]
-        strs = "  " + i
+        strs = "" + i
         strs = strs[0:wi-3]
         pad.addstr(n, 0, strs)
         span.append(len(strs))
@@ -474,11 +475,11 @@ def toc(stdscr, src, index):
 
         for n in range(totlines):
             att = curses.A_REVERSE if index == n else curses.A_NORMAL
-            pre = ">>" if index == n else "  "
-            pad.addstr(n, 0, pre)
+            # pre = ">>" if index == n else "  "
+            # pad.addstr(n, 0, pre)
             pad.chgat(n, 0, span[n], pad.getbkgd() | att)
 
-        pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
+        pad.refresh(y, 0, Y+3,X+2, rows - 5, cols - 5)
         key_toc = toc.getch()
 
     toc.clear()
