@@ -634,11 +634,13 @@ def find_media_viewer():
                 VWR = [i]
                 break
 
-    if VWR[0] in {"gio"}:
+    if VWR and VWR[0] in {"gio"}:
         VWR.append("open")
 
 
 def open_media(scr, epub, src):
+    if not VWR:
+        return 0
     sfx = os.path.splitext(src)[1]
     fd, path = tempfile.mkstemp(suffix=sfx)
     try:
@@ -870,7 +872,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
 
     pad.keypad(True)
     for n, i in enumerate(src_lines):
-        if re.search("\[IMG:[0-9]+\]", i):
+        if re.search(r"\[IMG:[0-9]+\]", i):
             pad.addstr(n, width//2 - len(i)//2, i, curses.A_REVERSE)
         else:
             pad.addstr(n, 0, i)
@@ -1025,7 +1027,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             elif k == ord("o") and VWR is not None:
                 gambar, idx = [], []
                 for n, i in enumerate(src_lines[y:y+rows]):
-                    img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
+                    img = re.search(r"(?<=\[IMG:)[0-9]+(?=\])", i)
                     if img is not None:
                         gambar.append(img.group())
                         idx.append(n)
