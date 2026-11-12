@@ -505,7 +505,7 @@ def meta(stdscr, ebook):
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
         mdata += textwrap.wrap(i[0].upper() + ": " + data, wi - 6)
-    src_lines = mdata
+    src_lines = mdata or [""]
     totlines = len(src_lines)
 
     pad = curses.newpad(totlines, wi - 2 )
@@ -634,11 +634,13 @@ def find_media_viewer():
                 VWR = [i]
                 break
 
-    if VWR[0] in {"gio"}:
+    if VWR and VWR[0] in {"gio"}:
         VWR.append("open")
 
 
 def open_media(scr, epub, src):
+    if not VWR:
+        return 0
     sfx = os.path.splitext(src)[1]
     fd, path = tempfile.mkstemp(suffix=sfx)
     try:
@@ -854,6 +856,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
         pass
 
     src_lines, imgs = parser.get_lines(width)
+    if not src_lines:
+        src_lines = [""]
+    elif len(src_lines) > 32767:
+        src_lines = src_lines[:32767]
     totlines = len(src_lines)
 
     if y < 0 and totlines <= rows:
@@ -870,7 +876,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
 
     pad.keypad(True)
     for n, i in enumerate(src_lines):
-        if re.search("\[IMG:[0-9]+\]", i):
+        if re.search(r"\[IMG:[0-9]+\]", i):
             pad.addstr(n, width//2 - len(i)//2, i, curses.A_REVERSE)
         else:
             pad.addstr(n, 0, i)
@@ -1025,7 +1031,7 @@ def reader(stdscr, ebook, index, width, y, pctg):
             elif k == ord("o") and VWR is not None:
                 gambar, idx = [], []
                 for n, i in enumerate(src_lines[y:y+rows]):
-                    img = re.search("(?<=\[IMG:)[0-9]+(?=\])", i)
+                    img = re.search(r"(?<=\[IMG:)[0-9]+(?=\])", i)
                     if img is not None:
                         gambar.append(img.group())
                         idx.append(n)
