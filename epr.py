@@ -505,7 +505,7 @@ def meta(stdscr, ebook):
         data = re.sub("<[^>]*>", "", i[1])
         data = re.sub("\t", "", data)
         mdata += textwrap.wrap(i[0].upper() + ": " + data, wi - 6)
-    src_lines = mdata
+    src_lines = mdata or [""]
     totlines = len(src_lines)
 
     pad = curses.newpad(totlines, wi - 2 )
@@ -854,6 +854,10 @@ def reader(stdscr, ebook, index, width, y, pctg):
         pass
 
     src_lines, imgs = parser.get_lines(width)
+    if not src_lines:
+        src_lines = [""]
+    elif len(src_lines) > 32767:
+        src_lines = src_lines[:32767]
     totlines = len(src_lines)
 
     if y < 0 and totlines <= rows:
