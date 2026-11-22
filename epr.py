@@ -1040,9 +1040,9 @@ def reader(stdscr, ebook, index, width, y, pctg):
                         stdscr.refresh()
                         curses.curs_set(1)
                         p = pad.getch()
-                        if p in SCROLL_DOWN:
+                        if p in SCROLL_DOWN or p in SCROLL_DOWN_J:
                             i += 1
-                        elif p in SCROLL_UP:
+                        elif p in SCROLL_UP or p in SCROLL_UP_K:
                             i -= 1
                         i = i % len(gambar)
 
