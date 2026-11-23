@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/bin/env python3
 """\
 Usages:
     epr             read last epub
@@ -408,6 +408,7 @@ def toc(stdscr, src, index):
     key_toc = 0
 
     totlines = len(src)
+    # print1(src)
     toc.refresh()
     pad = curses.newpad(totlines, wi - 2 )
     if COLORSUPPORT:
@@ -424,7 +425,7 @@ def toc(stdscr, src, index):
 
     for n, i in enumerate(src):
         # strs = "  " + str(n+1).rjust(d) + " " + i[0]
-        strs = "  " + i
+        strs = "" + i
         strs = strs[0:wi-3]
         pad.addstr(n, 0, strs)
         span.append(len(strs))
@@ -474,11 +475,11 @@ def toc(stdscr, src, index):
 
         for n in range(totlines):
             att = curses.A_REVERSE if index == n else curses.A_NORMAL
-            pre = ">>" if index == n else "  "
-            pad.addstr(n, 0, pre)
+            # pre = ">>" if index == n else "  "
+            # pad.addstr(n, 0, pre)
             pad.chgat(n, 0, span[n], pad.getbkgd() | att)
 
-        pad.refresh(y, 0, Y+4,X+4, rows - 5, cols - 6)
+        pad.refresh(y, 0, Y+3,X+2, rows - 5, cols - 5)
         key_toc = toc.getch()
 
     toc.clear()
@@ -544,6 +545,10 @@ def meta(stdscr, ebook):
     return
 
 
+# f= open('log', 'w')
+# def print1(*args, **kwargs):
+#     print(*args, file=f, **kwargs)
+
 def help(stdscr):
     rows, cols = stdscr.getmaxyx()
     hi, wi = rows - 4, cols - 4
@@ -559,19 +564,32 @@ def help(stdscr):
     key_help = 0
 
     src = re.search("Key Bind(\n|.)*", __doc__).group()
+    src = re.sub(r' +', ' ', src)
+    # print1(src)
+    pW = cols - 4
+    import textwrap
+    s=[]
+    for i in src.splitlines(): s += textwrap.wrap(i,pW)
+    src = "\n".join(s)
     src_lines = src.splitlines()
     totlines = len(src_lines)
 
-    pad = curses.newpad(totlines, wi - 2 )
+    pad = curses.newpad(totlines, wi )
     if COLORSUPPORT:
         pad.bkgd(stdscr.getbkgd())
 
     pad.keypad(True)
     for n, i in enumerate(src_lines):
-        pad.addstr(n, 0, i)
+        i = i.strip()
+        # print1( n, i)
+        try:
+            pad.addstr(n, 0, i)
+        except curses.error:
+            pass
     y = 0
     help.refresh()
-    pad.refresh(y,0, Y+4,X+4, rows - 5, cols - 6)
+    pY, pX = Y+3, X+2
+    pad.refresh(y,0, pY,pX, rows - 5, pW)
 
     padhi = rows - 5 - Y - 4 + 1
 
@@ -590,7 +608,7 @@ def help(stdscr):
             y = pgend(totlines, padhi)
         elif key_help in {curses.KEY_RESIZE}|META|TOC:
             return key_help
-        pad.refresh(y,0, 6,5, rows - 5, cols - 5)
+        pad.refresh(y,0, pY,pX, rows - 5, pW)
         key_help = help.getch()
 
     help.clear()
